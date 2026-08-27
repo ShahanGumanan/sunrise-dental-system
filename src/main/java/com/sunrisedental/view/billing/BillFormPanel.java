@@ -109,7 +109,12 @@ public class BillFormPanel extends JPanel {
             String type = stdRadio.isSelected() ? "standard" : (emgRadio.isSelected() ? "emergency" : "child");
             Bill bill = billController.generateBill(currentAppt, type);
             if (bill != null) {
-                JOptionPane.showMessageDialog(this, "Bill Saved! Receipt No: " + bill.getReceiptNumber());
+                JFrame receiptFrame = new JFrame("Receipt: " + bill.getReceiptNumber());
+                receiptFrame.setSize(400, 500);
+                receiptFrame.setLocationRelativeTo(this);
+                receiptFrame.add(new BillReceiptPanel(bill));
+                receiptFrame.setVisible(true);
+
                 generateBtn.setEnabled(false);
             }
         });

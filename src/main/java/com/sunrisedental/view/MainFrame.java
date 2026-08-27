@@ -9,6 +9,8 @@ import com.sunrisedental.view.admin.UserManagementPanel;
 import com.sunrisedental.view.dentist.DentistSchedulePanel;
 import com.sunrisedental.view.report.DailyReportPanel;
 import com.sunrisedental.view.report.RevenueReportPanel;
+import com.sunrisedental.view.appointment.AppointmentDirectoryPanel;
+import com.sunrisedental.view.help.HelpPanel;
 
 import javax.swing.*;
 import java.awt.*;
@@ -87,12 +89,15 @@ public class MainFrame extends JFrame {
         contentPanel.add(new DentistSchedulePanel(), "SCHEDULE");
         contentPanel.add(new DailyReportPanel(), "DAILY_REPORT");
         contentPanel.add(new RevenueReportPanel(), "REVENUE_REPORT");
+        contentPanel.add(new AppointmentDirectoryPanel(), "APPOINTMENT_LIST");
+        contentPanel.add(new HelpPanel(), "HELP");
 
         // Add Sidebar Buttons based on Role
         addNavButton("Dashboard", "DASHBOARD");
         
         if (SessionManager.hasRole("admin") || SessionManager.hasRole("receptionist")) {
             addNavButton("Book Appointment", "NEW_APPOINTMENT");
+            addNavButton("Appt Directory", "APPOINTMENT_LIST");
             addNavButton("Patients", "PATIENTS");
             addNavButton("Billing", "BILLING");
             addNavButton("Daily Report", "DAILY_REPORT");
@@ -106,6 +111,8 @@ public class MainFrame extends JFrame {
         if (SessionManager.hasRole("dentist")) {
             addNavButton("My Schedule", "SCHEDULE");
         }
+
+        addNavButton("System Help", "HELP");
 
         appPanel.add(headerPanel, BorderLayout.NORTH);
         appPanel.add(sidebarPanel, BorderLayout.WEST);
