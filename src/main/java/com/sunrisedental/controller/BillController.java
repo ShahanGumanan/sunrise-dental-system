@@ -6,7 +6,7 @@ import com.sunrisedental.model.Appointment;
 import com.sunrisedental.model.Bill;
 import com.sunrisedental.pattern.factory.BillFactory;
 import com.sunrisedental.pattern.strategy.FeeCalculator;
-import com.sunrisedental.util.NumberGenerator; // Ensure receipt gen is in this util or just use System.currentTimeMillis()
+import com.sunrisedental.util.NumberGenerator; 
 
 public class BillController {
     private BillDAO billDAO;

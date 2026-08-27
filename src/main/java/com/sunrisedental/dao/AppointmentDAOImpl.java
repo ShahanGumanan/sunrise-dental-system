@@ -3,6 +3,8 @@ package com.sunrisedental.dao;
 import com.sunrisedental.db.DatabaseConnection;
 import com.sunrisedental.model.Appointment;
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class AppointmentDAOImpl implements AppointmentDAO {
     
@@ -63,5 +65,46 @@ public class AppointmentDAOImpl implements AppointmentDAO {
             e.printStackTrace();
         }
         return null;
+    }
+
+    @Override
+    public List<Appointment> findByDate(java.time.LocalDate date) {
+        List<Appointment> list = new ArrayList<>();
+        String sql = "SELECT a.*, p.name as p_name, d_u.full_name as d_name, t.name as t_name " +
+                     "FROM appointments a " +
+                     "JOIN patients p ON a.patient_id = p.id " +
+                     "JOIN dentists d ON a.dentist_id = d.id " +
+                     "JOIN users d_u ON d.user_id = d_u.id " +
+                     "JOIN treatments t ON a.treatment_id = t.id " +
+                     "WHERE a.appointment_date = ?";
+
+        try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
+            ps.setDate(1, Date.valueOf(date));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Appointment appt = new Appointment();
+                    appt.setAppointmentNumber(rs.getString("appointment_number"));
+                    appt.setAppointmentTime(rs.getTime("appointment_time").toLocalTime());
+                    appt.setStatus(rs.getString("status"));
+
+                    com.sunrisedental.model.Patient patient = new com.sunrisedental.model.Patient();
+                    patient.setName(rs.getString("p_name"));
+                    appt.setPatient(patient);
+
+                    com.sunrisedental.model.Dentist dentist = new com.sunrisedental.model.Dentist();
+                    dentist.setFullName(rs.getString("d_name"));
+                    appt.setDentist(dentist);
+
+                    com.sunrisedental.model.Treatment treatment = new com.sunrisedental.model.Treatment();
+                    treatment.setName(rs.getString("t_name"));
+                    appt.setTreatment(treatment);
+
+                    list.add(appt);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
     }
 }

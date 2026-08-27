@@ -5,6 +5,10 @@ import com.sunrisedental.view.appointment.AppointmentFormPanel;
 import com.sunrisedental.view.billing.BillFormPanel;
 import com.sunrisedental.view.patient.PatientFormPanel;
 import com.sunrisedental.view.patient.PatientListPanel;
+import com.sunrisedental.view.admin.UserManagementPanel;
+import com.sunrisedental.view.dentist.DentistSchedulePanel;
+import com.sunrisedental.view.report.DailyReportPanel;
+import com.sunrisedental.view.report.RevenueReportPanel;
 
 import javax.swing.*;
 import java.awt.*;
@@ -79,6 +83,10 @@ public class MainFrame extends JFrame {
         patientTabs.addTab("View All Patients", new PatientListPanel());
         contentPanel.add(patientTabs, "PATIENTS");
         contentPanel.add(new BillFormPanel(), "BILLING");
+        contentPanel.add(new UserManagementPanel(), "USERS");
+        contentPanel.add(new DentistSchedulePanel(), "SCHEDULE");
+        contentPanel.add(new DailyReportPanel(), "DAILY_REPORT");
+        contentPanel.add(new RevenueReportPanel(), "REVENUE_REPORT");
 
         // Add Sidebar Buttons based on Role
         addNavButton("Dashboard", "DASHBOARD");
@@ -87,10 +95,16 @@ public class MainFrame extends JFrame {
             addNavButton("Book Appointment", "NEW_APPOINTMENT");
             addNavButton("Patients", "PATIENTS");
             addNavButton("Billing", "BILLING");
+            addNavButton("Daily Report", "DAILY_REPORT");
+        }
+
+        if (SessionManager.hasRole("admin")) {
+            addNavButton("Manage Staff", "USERS");
+            addNavButton("Revenue Report", "REVENUE_REPORT");
         }
         
         if (SessionManager.hasRole("dentist")) {
-            addNavButton("My Schedule", "DASHBOARD");
+            addNavButton("My Schedule", "SCHEDULE");
         }
 
         appPanel.add(headerPanel, BorderLayout.NORTH);
