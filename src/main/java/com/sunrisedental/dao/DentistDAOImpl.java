@@ -1,0 +1,46 @@
+package com.sunrisedental.dao;
+
+import com.sunrisedental.db.DatabaseConnection;
+import com.sunrisedental.model.Dentist;
+
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
+
+public class DentistDAOImpl implements DentistDAO {
+    private Connection getConnection() { return DatabaseConnection.getInstance().getConnection(); }
+
+    @Override
+    public List<Dentist> findAll() {
+        List<Dentist> list = new ArrayList<>();
+        // Join with users table to get the full name!
+        String sql = "SELECT d.*, u.full_name FROM dentists d JOIN users u ON d.user_id = u.id WHERE u.is_active = TRUE";
+        try (PreparedStatement ps = getConnection().prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) { list.add(mapDentist(rs)); }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return list;
+    }
+
+    @Override
+    public Dentist findById(int id) {
+        String sql = "SELECT d.*, u.full_name FROM dentists d JOIN users u ON d.user_id = u.id WHERE d.id = ?";
+        try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return mapDentist(rs);
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return null;
+    }
+
+    private Dentist mapDentist(ResultSet rs) throws SQLException {
+        Dentist d = new Dentist();
+        d.setId(rs.getInt("id"));
+        d.setUserId(rs.getInt("user_id"));
+        d.setSpecialization(rs.getString("specialization"));
+        d.setAvailableDays(rs.getString("available_days"));
+        d.setFullName(rs.getString("full_name")); // From JOIN
+        return d;
+    }
+}
