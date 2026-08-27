@@ -1,16 +1,20 @@
 package com.sunrisedental;
 
-import javax.swing.JFrame;
-import javax.swing.SwingUtilities;
+import com.sunrisedental.dao.UserDAO;
+import com.sunrisedental.dao.UserDAOImpl;
+import com.sunrisedental.model.User;
 
 public class Main {
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            JFrame frame = new JFrame("Sunrise Dental Clinic - Initialized");
-            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            frame.setSize(800, 600);
-            frame.setLocationRelativeTo(null);
-            frame.setVisible(true);
-        });
+        System.out.println("Testing Database Connection...");
+        
+        UserDAO userDAO = new UserDAOImpl();
+        User admin = userDAO.findByUsername("admin");
+        
+        if (admin != null) {
+            System.out.println("SUCCESS! Found user: " + admin.getFullName() + " (Role: " + admin.getRole() + ")");
+        } else {
+            System.out.println("FAILED! Could not find user. Check database connection.");
+        }
     }
 }
