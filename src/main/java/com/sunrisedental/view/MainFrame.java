@@ -1,6 +1,10 @@
 package com.sunrisedental.view;
 
 import com.sunrisedental.util.SessionManager;
+import com.sunrisedental.view.appointment.AppointmentFormPanel;
+import com.sunrisedental.view.patient.PatientFormPanel;
+import com.sunrisedental.view.patient.PatientListPanel;
+
 import javax.swing.*;
 import java.awt.*;
 
@@ -67,13 +71,19 @@ public class MainFrame extends JFrame {
         contentCardLayout = new CardLayout();
         contentPanel = new JPanel(contentCardLayout);
         contentPanel.add(new DashboardPanel(), "DASHBOARD");
+        contentPanel.add(new AppointmentFormPanel(), "NEW_APPOINTMENT");
+
+        JTabbedPane patientTabs = new JTabbedPane();
+        patientTabs.addTab("Register Patient", new PatientFormPanel());
+        patientTabs.addTab("View All Patients", new PatientListPanel());
+        contentPanel.add(patientTabs, "PATIENTS");
 
         // Add Sidebar Buttons based on Role
         addNavButton("Dashboard", "DASHBOARD");
         
         if (SessionManager.hasRole("admin") || SessionManager.hasRole("receptionist")) {
-            addNavButton("Appointments", "DASHBOARD"); // Placeholders for now
-            addNavButton("Patients", "DASHBOARD");
+            addNavButton("Book Appointment", "NEW_APPOINTMENT");
+            addNavButton("Patients", "PATIENTS");
             addNavButton("Billing", "DASHBOARD");
         }
         
