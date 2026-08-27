@@ -32,7 +32,36 @@ public class AppointmentDAOImpl implements AppointmentDAO {
 
     @Override
     public Appointment findByAppointmentNumber(String number) {
-        // We will implement this fully in Part 2 when we build the Search screen
-        return null; 
+        String sql = "SELECT a.*, p.name as p_name, t.name as t_name, t.base_fee, t.consultation_fee " +
+                     "FROM appointments a " +
+                     "JOIN patients p ON a.patient_id = p.id " +
+                     "JOIN treatments t ON a.treatment_id = t.id " +
+                     "WHERE a.appointment_number = ?";
+
+        try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
+            ps.setString(1, number);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    Appointment appt = new Appointment();
+                    appt.setId(rs.getInt("id"));
+                    appt.setAppointmentNumber(rs.getString("appointment_number"));
+
+                    com.sunrisedental.model.Patient patient = new com.sunrisedental.model.Patient();
+                    patient.setName(rs.getString("p_name"));
+                    appt.setPatient(patient);
+
+                    com.sunrisedental.model.Treatment treatment = new com.sunrisedental.model.Treatment();
+                    treatment.setName(rs.getString("t_name"));
+                    treatment.setBaseFee(rs.getDouble("base_fee"));
+                    treatment.setConsultationFee(rs.getDouble("consultation_fee"));
+                    appt.setTreatment(treatment);
+
+                    return appt;
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 }
