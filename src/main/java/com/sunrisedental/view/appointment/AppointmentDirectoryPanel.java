@@ -182,7 +182,9 @@ public class AppointmentDirectoryPanel extends JPanel {
                 a.getPatient().getName(), a.getDentist().getFullName(), a.getTreatment().getName(),
                 a.getStatus(), a.getNotes() == null ? "" : a.getNotes(),
                 "pending".equals(a.getStatus()) ? "Edit" :
-                    ("confirmed".equals(a.getStatus()) && billAction != null ? "Create Bill" : "")
+                    ("confirmed".equals(a.getStatus()) && billAction != null ? "Create Bill" :
+                    ("completed".equals(a.getStatus()) ? "Completed" :
+                    ("cancelled".equals(a.getStatus()) ? "Cancelled" : "")))
             });
         }
     }

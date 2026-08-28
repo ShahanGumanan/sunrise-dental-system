@@ -68,7 +68,13 @@ public class UserDAOImpl implements UserDAO {
 
     @Override
     public boolean updateStatus(int id, boolean isActive) {
+        return updateStatus(id, isActive, -1);
+    }
+
+    @Override
+    public boolean updateStatus(int id, boolean isActive, int actingUserId) {
         String sql = "UPDATE users SET is_active = ? WHERE id = ?";
+        if (id == actingUserId && !isActive) return false;
         try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
             ps.setBoolean(1, isActive);
             ps.setInt(2, id);

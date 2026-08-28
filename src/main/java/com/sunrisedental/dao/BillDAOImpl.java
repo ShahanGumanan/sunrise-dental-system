@@ -82,4 +82,46 @@ public class BillDAOImpl implements BillDAO {
             return false;
         }
     }
+
+    @Override
+    public Bill findByAppointmentId(int appointmentId) {
+        String sql = "SELECT b.*, a.appointment_number, p.name as p_name, d_u.full_name as d_name, "
+                + "t.name as t_name, t.description, t.duration_minutes FROM bills b "
+                + "JOIN appointments a ON b.appointment_id = a.id JOIN patients p ON a.patient_id = p.id "
+                + "JOIN dentists d ON a.dentist_id = d.id JOIN users d_u ON d.user_id = d_u.id "
+                + "JOIN treatments t ON a.treatment_id = t.id WHERE b.appointment_id = ?";
+        try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
+            ps.setInt(1, appointmentId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) return null;
+                Bill bill = new Bill();
+                bill.setId(rs.getInt("id"));
+                bill.setReceiptNumber(rs.getString("receipt_number"));
+                bill.setConsultationFee(rs.getDouble("consultation_fee"));
+                bill.setTreatmentFee(rs.getDouble("treatment_fee"));
+                bill.setDiscount(rs.getDouble("discount"));
+                bill.setTotal(rs.getDouble("total"));
+                bill.setBillType(rs.getString("bill_type"));
+                Appointment appointment = new Appointment();
+                appointment.setId(appointmentId);
+                appointment.setAppointmentNumber(rs.getString("appointment_number"));
+                com.sunrisedental.model.Patient patient = new com.sunrisedental.model.Patient();
+                patient.setName(rs.getString("p_name"));
+                appointment.setPatient(patient);
+                com.sunrisedental.model.Dentist dentist = new com.sunrisedental.model.Dentist();
+                dentist.setFullName(rs.getString("d_name"));
+                appointment.setDentist(dentist);
+                com.sunrisedental.model.Treatment treatment = new com.sunrisedental.model.Treatment();
+                treatment.setName(rs.getString("t_name"));
+                treatment.setDescription(rs.getString("description"));
+                treatment.setDurationMinutes(rs.getInt("duration_minutes"));
+                appointment.setTreatment(treatment);
+                bill.setAppointment(appointment);
+                return bill;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
 }

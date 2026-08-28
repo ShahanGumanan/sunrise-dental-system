@@ -5,6 +5,7 @@ import com.sunrisedental.dao.DentistDAOImpl;
 import com.sunrisedental.dao.UserDAOImpl;
 import com.sunrisedental.model.User;
 import com.sunrisedental.util.PasswordUtil;
+import com.sunrisedental.util.SessionManager;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -40,9 +41,31 @@ public class UserManagementPanel extends JPanel {
         add(topPanel, BorderLayout.NORTH);
 
         // Table
-        String[] columns = {"ID", "Username", "Full Name", "Role", "Status"};
+        String[] columns = {"ID", "Username", "Full Name", "Role", "Status", "Action"};
         tableModel = new DefaultTableModel(columns, 0);
         table = new JTable(tableModel);
+        table.getColumnModel().getColumn(5).setPreferredWidth(130);
+        table.getColumnModel().getColumn(5).setCellRenderer((tableComponent, value, selected, focused, row, column) -> {
+            JButton button = new JButton(String.valueOf(value));
+            button.setFocusPainted(false);
+            button.setEnabled(!"--".equals(value));
+            return button;
+        });
+        table.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent event) {
+                int row = table.rowAtPoint(event.getPoint());
+                if (row < 0 || table.columnAtPoint(event.getPoint()) != 5) return;
+                int userId = ((Number) tableModel.getValueAt(row, 0)).intValue();
+                if (userId == SessionManager.getCurrentUser().getId()) {
+                    JOptionPane.showMessageDialog(UserManagementPanel.this, "You cannot deactivate your own account.",
+                            "Status change not allowed", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+                boolean activate = "Activate".equals(tableModel.getValueAt(row, 5));
+                if (userDAO.updateStatus(userId, activate, SessionManager.getCurrentUser().getId())) loadUsers();
+            }
+        });
         add(new JScrollPane(table), BorderLayout.CENTER);
 
         loadUsers();
@@ -55,7 +78,9 @@ public class UserManagementPanel extends JPanel {
             if ("dentist".equalsIgnoreCase(u.getRole()) && u.isActive()) {
                 dentistDAO.ensureProfileForUser(u.getId());
             }
-            tableModel.addRow(new Object[]{u.getId(), u.getUsername(), u.getFullName(), u.getRole(), u.isActive() ? "Active" : "Inactive"});
+                tableModel.addRow(new Object[]{u.getId(), u.getUsername(), u.getFullName(), u.getRole(),
+                    u.isActive() ? "Active" : "Inactive",
+                    u.getId() == SessionManager.getCurrentUser().getId() ? "--" : (u.isActive() ? "Deactivate" : "Activate")});
         }
     }
 

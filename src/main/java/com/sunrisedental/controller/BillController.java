@@ -53,4 +53,8 @@ public class BillController {
         }
         return null; // Failed to save
     }
+
+    public Bill findByAppointmentId(int appointmentId) {
+        return billDAO.findByAppointmentId(appointmentId);
+    }
 }

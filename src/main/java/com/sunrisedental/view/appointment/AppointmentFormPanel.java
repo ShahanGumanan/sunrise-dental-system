@@ -11,6 +11,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.LocalDateTime;
 import java.sql.Date;
 import java.util.List;
 
@@ -164,6 +165,13 @@ public class AppointmentFormPanel extends JPanel {
         String timeStr = (String) timeCombo.getSelectedItem();
         if ("Select a time".equals(timeStr)) {
             JOptionPane.showMessageDialog(this, "Please select an appointment time.", "Validation Error",
+                JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        LocalDate appointmentDate = LocalDate.parse(dateStr);
+        LocalTime appointmentTime = LocalTime.parse(timeStr);
+        if (LocalDateTime.of(appointmentDate, appointmentTime).isBefore(LocalDateTime.now())) {
+            JOptionPane.showMessageDialog(this, "Please select a future appointment time.", "Validation Error",
                 JOptionPane.ERROR_MESSAGE);
             return;
         }

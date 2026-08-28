@@ -14,9 +14,10 @@ public class BillFormPanel extends JPanel {
     private Appointment currentAppt;
 
     private JTextField searchField;
-    private JLabel pNameLbl, dentistLbl, tNameLbl, baseFeeLbl, totalLbl;
+    private JLabel pNameLbl, dentistLbl, tNameLbl, descriptionLbl, durationLbl, baseFeeLbl, totalLbl;
     private JRadioButton stdRadio, emgRadio, childRadio;
-    private JButton generateBtn;
+    private JButton generateBtn, viewBillBtn;
+    private Bill savedBill;
 
     public BillFormPanel() {
         apptController = new AppointmentController();
@@ -36,13 +37,15 @@ public class BillFormPanel extends JPanel {
         add(topPanel, BorderLayout.NORTH);
 
         // 2. Middle Panel (Details & Calculation)
-        JPanel middlePanel = new JPanel(new GridLayout(7, 2, 10, 10));
+        JPanel middlePanel = new JPanel(new GridLayout(9, 2, 10, 10));
         middlePanel.setBackground(Color.WHITE);
         middlePanel.setBorder(BorderFactory.createTitledBorder("Billing Details"));
 
         pNameLbl = new JLabel("-");
         dentistLbl = new JLabel("-");
         tNameLbl = new JLabel("-");
+        descriptionLbl = new JLabel("-");
+        durationLbl = new JLabel("-");
         baseFeeLbl = new JLabel("-");
         totalLbl = new JLabel("-");
         totalLbl.setFont(new Font("Arial", Font.BOLD, 16));
@@ -51,6 +54,8 @@ public class BillFormPanel extends JPanel {
         middlePanel.add(new JLabel("Patient Name:")); middlePanel.add(pNameLbl);
         middlePanel.add(new JLabel("Dentist:")); middlePanel.add(dentistLbl);
         middlePanel.add(new JLabel("Treatment:")); middlePanel.add(tNameLbl);
+        middlePanel.add(new JLabel("Description:")); middlePanel.add(descriptionLbl);
+        middlePanel.add(new JLabel("Duration:")); middlePanel.add(durationLbl);
         middlePanel.add(new JLabel("Base Treatment Fee:")); middlePanel.add(baseFeeLbl);
 
         // Radio Buttons for Bill Type
@@ -72,6 +77,8 @@ public class BillFormPanel extends JPanel {
         // 3. Bottom Panel (Actions)
         JButton calcBtn = new JButton("Calculate Total");
         generateBtn = new JButton("Generate Bill");
+        viewBillBtn = new JButton("View Saved Bill");
+        viewBillBtn.setEnabled(false);
         generateBtn.setBackground(new Color(0, 153, 51));
         generateBtn.setForeground(Color.WHITE);
         generateBtn.setEnabled(false); // Disabled until calculated
@@ -80,6 +87,7 @@ public class BillFormPanel extends JPanel {
         bottomPanel.setBackground(Color.WHITE);
         bottomPanel.add(calcBtn);
         bottomPanel.add(generateBtn);
+        bottomPanel.add(viewBillBtn);
         add(bottomPanel, BorderLayout.SOUTH);
 
         // --- Action Listeners ---
@@ -108,30 +116,41 @@ public class BillFormPanel extends JPanel {
             String type = stdRadio.isSelected() ? "standard" : (emgRadio.isSelected() ? "emergency" : "child");
             Bill bill = billController.generateBill(currentAppt, type);
             if (bill != null) {
-                JFrame receiptFrame = new JFrame("Receipt: " + bill.getReceiptNumber());
-                receiptFrame.setSize(400, 500);
-                receiptFrame.setLocationRelativeTo(this);
-                receiptFrame.add(new BillReceiptPanel(bill));
-                receiptFrame.setVisible(true);
-
+                showReceipt(bill);
                 generateBtn.setEnabled(false);
+                savedBill = bill;
+                viewBillBtn.setEnabled(true);
+            } else {
+                Bill existingBill = billController.findByAppointmentId(currentAppt.getId());
+                if (existingBill != null) {
+                    savedBill = existingBill;
+                    viewBillBtn.setEnabled(true);
+                    showReceipt(existingBill);
+                }
             }
         });
 
         stdRadio.addActionListener(e -> refreshTotal());
         emgRadio.addActionListener(e -> refreshTotal());
         childRadio.addActionListener(e -> refreshTotal());
+        viewBillBtn.addActionListener(e -> {
+            if (savedBill != null) showReceipt(savedBill);
+        });
     }
 
     public void loadAppointment(Appointment appointment) {
         currentAppt = appointment;
+        savedBill = billController.findByAppointmentId(appointment.getId());
         searchField.setText(appointment.getAppointmentNumber());
         pNameLbl.setText(appointment.getPatient().getName());
         dentistLbl.setText(appointment.getDentist().getFullName());
         tNameLbl.setText(appointment.getTreatment().getName());
+        descriptionLbl.setText(appointment.getTreatment().getDescription() == null ? "" : appointment.getTreatment().getDescription());
+        durationLbl.setText(appointment.getTreatment().getDurationMinutes() + " minutes");
         baseFeeLbl.setText("Rs. " + appointment.getTreatment().getBaseFee());
         calculateTotal();
-        generateBtn.setEnabled("confirmed".equalsIgnoreCase(appointment.getStatus()));
+        generateBtn.setEnabled("confirmed".equalsIgnoreCase(appointment.getStatus()) && savedBill == null);
+        viewBillBtn.setEnabled(savedBill != null);
         }
 
     private void refreshTotal() {
@@ -147,5 +166,13 @@ public class BillFormPanel extends JPanel {
         double total = calculator.calculateTreatmentFee(currentAppt.getTreatment().getBaseFee())
             + currentAppt.getTreatment().getConsultationFee();
         totalLbl.setText("Rs. " + total);
+    }
+
+    private void showReceipt(Bill bill) {
+        JFrame receiptFrame = new JFrame("Receipt: " + bill.getReceiptNumber());
+        receiptFrame.setSize(400, 550);
+        receiptFrame.setLocationRelativeTo(this);
+        receiptFrame.add(new BillReceiptPanel(bill));
+        receiptFrame.setVisible(true);
     }
 }

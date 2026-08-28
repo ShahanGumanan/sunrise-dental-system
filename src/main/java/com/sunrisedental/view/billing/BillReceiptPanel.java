@@ -7,6 +7,8 @@ import java.awt.print.*;
 
 public class BillReceiptPanel extends JPanel implements Printable {
     private Bill bill;
+    private JTextArea receiptText;
+    private JLabel clinicName;
 
     public BillReceiptPanel(Bill bill) {
         this.bill = bill;
@@ -14,14 +16,19 @@ public class BillReceiptPanel extends JPanel implements Printable {
         setBackground(Color.WHITE);
         setBorder(BorderFactory.createEmptyBorder(30, 30, 30, 30));
 
-        JLabel clinicName = new JLabel("SUNRISE DENTAL CLINIC");
+        clinicName = new JLabel("SUNRISE DENTAL CLINIC");
         clinicName.setFont(new Font("Monospaced", Font.BOLD, 24));
         clinicName.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        JTextArea receiptText = new JTextArea();
+        receiptText = new JTextArea();
         receiptText.setFont(new Font("Monospaced", Font.PLAIN, 14));
         receiptText.setEditable(false);
-        receiptText.setBorder(BorderFactory.createEmptyBorder(20, 0, 0, 0));
+        receiptText.setLineWrap(true);
+        receiptText.setWrapStyleWord(true);
+        receiptText.setColumns(40);
+        receiptText.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(Color.GRAY),
+            BorderFactory.createEmptyBorder(12, 12, 12, 12)));
 
         String text = String.format(
             "========================================\n" +
@@ -30,7 +37,10 @@ public class BillReceiptPanel extends JPanel implements Printable {
             " BILL TYPE    : %s\n" +
             "========================================\n" +
             " PATIENT      : %s\n" +
+            " DENTIST      : %s\n" +
             " TREATMENT    : %s\n" +
+            " DESCRIPTION  : %s\n" +
+            " DURATION     : %d minutes\n" +
             "----------------------------------------\n" +
             " CONSULTATION : Rs. %.2f\n" +
             " TREATMENT FEE: Rs. %.2f\n" +
@@ -40,7 +50,9 @@ public class BillReceiptPanel extends JPanel implements Printable {
             "========================================\n" +
             "       Thank you for your visit!        \n",
             bill.getReceiptNumber(), java.time.LocalDate.now().toString(), bill.getBillType().toUpperCase(),
-            bill.getAppointment().getPatient().getName(), bill.getAppointment().getTreatment().getName(),
+            bill.getAppointment().getPatient().getName(), bill.getAppointment().getDentist().getFullName(),
+            bill.getAppointment().getTreatment().getName(), bill.getAppointment().getTreatment().getDescription(),
+            bill.getAppointment().getTreatment().getDurationMinutes(),
             bill.getConsultationFee(), bill.getTreatmentFee(), bill.getDiscount(), bill.getTotal()
         );
         receiptText.setText(text);
@@ -72,7 +84,14 @@ public class BillReceiptPanel extends JPanel implements Printable {
         if (pageIndex > 0) return NO_SUCH_PAGE;
         Graphics2D g2d = (Graphics2D) g;
         g2d.translate(pf.getImageableX(), pf.getImageableY());
-        this.paintAll(g); // Renders the panel to the printer
+        int printableWidth = (int) pf.getImageableWidth();
+        clinicName.setSize(printableWidth, clinicName.getPreferredSize().height);
+        clinicName.printAll(g2d);
+
+        int headingHeight = clinicName.getHeight() + 18;
+        g2d.translate(0, headingHeight);
+        receiptText.setSize(printableWidth, receiptText.getPreferredSize().height);
+        receiptText.printAll(g2d);
         return PAGE_EXISTS;
     }
 }
