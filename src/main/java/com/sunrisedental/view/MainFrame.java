@@ -115,6 +115,8 @@ public class MainFrame extends JFrame {
         
         if (SessionManager.hasRole("dentist")) {
             addNavButton("My Schedule", "SCHEDULE");
+            contentPanel.add(new AppointmentDirectoryPanel(true), "DENTIST_APPOINTMENTS");
+            addNavButton("Appointments", "DENTIST_APPOINTMENTS");
         }
 
         addNavButton("System Help", "HELP");

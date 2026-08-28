@@ -67,7 +67,9 @@ public class AppointmentDirectoryPanel extends JPanel {
         add(topPanel, BorderLayout.NORTH);
 
         // Table
-        String[] cols = {"ID", "Appt No", "Date", "Time", "Patient", "Dentist", "Treatment", "Status", "Notes", "Action"};
+        String[] cols = dentistOnly
+            ? new String[]{"ID", "Appt No", "Date", "Time", "Patient", "Dentist", "Treatment", "Status", "Notes"}
+            : new String[]{"ID", "Appt No", "Date", "Time", "Patient", "Dentist", "Treatment", "Status", "Notes", "Action"};
         tableModel = new DefaultTableModel(cols, 0);
         table = new JTable(tableModel);
         table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
@@ -82,13 +84,15 @@ public class AppointmentDirectoryPanel extends JPanel {
                 return component;
             }
         });
-        table.getColumnModel().getColumn(9).setPreferredWidth(130);
-        table.getColumnModel().getColumn(9).setCellRenderer((tableComponent, value, isSelected, hasFocus, row, column) -> {
-            JButton button = new JButton(String.valueOf(value));
-            button.setFocusPainted(false);
-            button.setEnabled(value != null && !String.valueOf(value).isBlank());
-            return button;
-        });
+        if (!dentistOnly) {
+            table.getColumnModel().getColumn(9).setPreferredWidth(130);
+            table.getColumnModel().getColumn(9).setCellRenderer((tableComponent, value, isSelected, hasFocus, row, column) -> {
+                JButton button = new JButton(String.valueOf(value));
+                button.setFocusPainted(false);
+                button.setEnabled(value != null && !String.valueOf(value).isBlank());
+                return button;
+            });
+        }
         add(new JScrollPane(table), BorderLayout.CENTER);
 
         loadData();
@@ -109,7 +113,7 @@ public class AppointmentDirectoryPanel extends JPanel {
                     int id = ((Number) tableModel.getValueAt(table.getSelectedRow(), 0)).intValue();
                     currentList.stream().filter(a -> a.getId() == id).findFirst().ifPresent(AppointmentDirectoryPanel.this::showDetails);
                 }
-                if (e.getClickCount() == 1 && table.columnAtPoint(e.getPoint()) == 9) {
+                if (!dentistOnly && e.getClickCount() == 1 && table.columnAtPoint(e.getPoint()) == 9) {
                     int row = table.rowAtPoint(e.getPoint());
                     if (row < 0) return;
                     String action = String.valueOf(tableModel.getValueAt(row, 9));
@@ -177,15 +181,22 @@ public class AppointmentDirectoryPanel extends JPanel {
             boolean matchesText = query.isEmpty() || a.getAppointmentNumber().toLowerCase().contains(query);
             boolean matchesStatus = "All statuses".equals(selectedStatus) || selectedStatus.equals(a.getStatus());
             if (!matchesText || !matchesStatus) continue;
-            tableModel.addRow(new Object[]{
-                a.getId(), a.getAppointmentNumber(), a.getAppointmentDate(), a.getAppointmentTime(),
-                a.getPatient().getName(), a.getDentist().getFullName(), a.getTreatment().getName(),
-                a.getStatus(), a.getNotes() == null ? "" : a.getNotes(),
-                "pending".equals(a.getStatus()) ? "Edit" :
-                    ("confirmed".equals(a.getStatus()) && billAction != null ? "Create Bill" :
-                    ("completed".equals(a.getStatus()) ? "Completed" :
-                    ("cancelled".equals(a.getStatus()) ? "Cancelled" : "")))
-            });
+            Object[] row = {
+                    a.getId(), a.getAppointmentNumber(), a.getAppointmentDate(), a.getAppointmentTime(),
+                    a.getPatient().getName(), a.getDentist().getFullName(), a.getTreatment().getName(),
+                    a.getStatus(), a.getNotes() == null ? "" : a.getNotes()
+            };
+            if (dentistOnly) {
+                tableModel.addRow(row);
+            } else {
+                tableModel.addRow(new Object[]{
+                        row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8],
+                        "pending".equals(a.getStatus()) ? "Edit" :
+                                ("confirmed".equals(a.getStatus()) && billAction != null ? "Create Bill" :
+                                ("completed".equals(a.getStatus()) ? "Completed" :
+                                ("cancelled".equals(a.getStatus()) ? "Cancelled" : "")))
+                });
+            }
         }
     }
 
