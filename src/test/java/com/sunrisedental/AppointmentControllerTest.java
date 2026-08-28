@@ -10,8 +10,10 @@ import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 
 class AppointmentControllerTest {
@@ -33,6 +35,49 @@ class AppointmentControllerTest {
 
         assertFalse(controller.bookAppointment(appointment));
         verifyNoInteractions(dao);
+    }
+
+    @Test
+    void rejectsPastTimeOnToday() {
+        AppointmentDAO dao = mock(AppointmentDAO.class);
+        AppointmentController controller = new AppointmentController(dao);
+        Appointment appointment = validAppointment();
+        appointment.setAppointmentDate(LocalDate.now());
+        appointment.setAppointmentTime(LocalDateTime.now().minusMinutes(1).toLocalTime());
+
+        boolean result = controller.bookAppointment(appointment);
+
+        TestConsole.report("Same-day appointment with past time", false, result);
+        assertFalse(result);
+        verifyNoInteractions(dao);
+    }
+
+    @Test
+    void rejectsBlankAppointmentNumber() {
+        AppointmentDAO dao = mock(AppointmentDAO.class);
+        AppointmentController controller = new AppointmentController(dao);
+        Appointment appointment = validAppointment();
+        appointment.setAppointmentNumber("   ");
+
+        boolean result = controller.bookAppointment(appointment);
+
+        TestConsole.report("Blank appointment number", false, result);
+        assertFalse(result);
+        verifyNoInteractions(dao);
+    }
+
+    @Test
+    void acceptsFutureAppointmentAndDelegatesToDao() {
+        AppointmentDAO dao = mock(AppointmentDAO.class);
+        when(dao.create(any(Appointment.class))).thenReturn(true);
+        Appointment appointment = validAppointment();
+        appointment.setAppointmentDate(LocalDate.now().plusDays(1));
+
+        boolean result = new AppointmentController(dao).bookAppointment(appointment);
+
+        TestConsole.report("Complete future appointment", true, result);
+        assertTrue(result);
+        verify(dao).create(appointment);
     }
 
     private Appointment validAppointment() {

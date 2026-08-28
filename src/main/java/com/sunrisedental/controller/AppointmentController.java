@@ -4,6 +4,7 @@ import com.sunrisedental.dao.AppointmentDAO;
 import com.sunrisedental.dao.AppointmentDAOImpl;
 import com.sunrisedental.model.Appointment;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 public class AppointmentController {
     private AppointmentDAO appointmentDAO;
@@ -23,7 +24,8 @@ public class AppointmentController {
                 || appointment.getAppointmentNumber().isBlank()) {
             return false;
         }
-        if (appointment.getAppointmentDate().isBefore(LocalDate.now())) {
+        if (LocalDateTime.of(appointment.getAppointmentDate(), appointment.getAppointmentTime())
+            .isBefore(LocalDateTime.now())) {
             return false;
         }
         return appointmentDAO.create(appointment);

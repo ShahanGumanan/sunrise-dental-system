@@ -23,6 +23,16 @@ class AppTest {
     }
 
     @Test
+    void storesTreatmentDescriptionAndDuration() {
+        com.sunrisedental.model.Treatment treatment = new com.sunrisedental.model.Treatment();
+        treatment.setDescription("Routine cleaning");
+        treatment.setDurationMinutes(45);
+
+        assertEquals("Routine cleaning", treatment.getDescription());
+        assertEquals(45, treatment.getDurationMinutes());
+    }
+
+    @Test
     void calculatesFeesUsingEachStrategy() {
         FeeCalculator standard = new StandardFeeCalculator();
         FeeCalculator emergency = new EmergencyFeeCalculator();
@@ -38,5 +48,23 @@ class AppTest {
         assertInstanceOf(EmergencyFeeCalculator.class, BillFactory.getCalculator("emergency"));
         assertInstanceOf(ChildFeeCalculator.class, BillFactory.getCalculator("child"));
         assertInstanceOf(StandardFeeCalculator.class, BillFactory.getCalculator("unknown"));
+    }
+
+    @Test
+    void rejectsEmptyAndMalformedContacts() {
+        assertFalse(ValidationUtil.isValidContact(null));
+        assertFalse(ValidationUtil.isValidContact(""));
+        assertFalse(ValidationUtil.isValidContact("077123456a"));
+        assertFalse(ValidationUtil.isValidContact("07712345678"));
+        assertFalse(ValidationUtil.isValidContact(" 0771234567"));
+    }
+
+    @Test
+    void handlesEmptyAndMalformedDates() {
+        assertFalse(ValidationUtil.isValidFutureDate(null));
+        assertFalse(ValidationUtil.isValidFutureDate(""));
+        assertFalse(ValidationUtil.isValidFutureDate("2026/08/28"));
+        assertFalse(ValidationUtil.isValidFutureDate("not-a-date"));
+        assertTrue(ValidationUtil.isValidFutureDate(LocalDate.now().plusDays(1).toString()));
     }
 }

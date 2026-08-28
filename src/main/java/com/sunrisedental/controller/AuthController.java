@@ -13,6 +13,10 @@ public class AuthController {
         this.userDAO = new UserDAOImpl();
     }
 
+    public AuthController(UserDAO userDAO) {
+        this.userDAO = userDAO;
+    }
+
     public boolean login(String username, String password) {
         User user = userDAO.findByUsername(username);
         

@@ -15,6 +15,7 @@ public class ValidationUtil {
     }
 
     public static boolean isValidFutureDate(String dateStr) {
+        if (dateStr == null || dateStr.isBlank()) return false;
         try {
             LocalDate date = LocalDate.parse(dateStr); // Expects YYYY-MM-DD
             return !date.isBefore(LocalDate.now()); // Cannot be in the past
