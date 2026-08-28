@@ -15,7 +15,15 @@ public class BillController {
         this.billDAO = new BillDAOImpl();
     }
 
+    public BillController(BillDAO billDAO) {
+        this.billDAO = billDAO;
+    }
+
     public Bill generateBill(Appointment appt, String billType) {
+        if (appt == null || appt.getTreatment() == null || appt.getId() <= 0 || billType == null || billType.isBlank()
+                || billDAO.existsForAppointment(appt.getId())) {
+            return null;
+        }
         // Use Factory to get the correct Strategy
         FeeCalculator calculator = BillFactory.getCalculator(billType);
         
@@ -32,7 +40,7 @@ public class BillController {
         Bill bill = new Bill();
         bill.setAppointment(appt);
         // Quick receipt number generator
-        bill.setReceiptNumber("REC-" + System.currentTimeMillis()); 
+        bill.setReceiptNumber(NumberGenerator.generateReceiptNumber());
         bill.setConsultationFee(consultationFee);
         bill.setTreatmentFee(finalTreatmentFee);
         bill.setDiscount(discountAmount);

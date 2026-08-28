@@ -35,12 +35,16 @@ public class UserDAOImpl implements UserDAO {
     @Override
     public boolean create(User user) {
         String sql = "INSERT INTO users (username, password_hash, role, full_name) VALUES (?, ?, ?, ?)";
-        try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
+        try (PreparedStatement ps = getConnection().prepareStatement(sql, java.sql.Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, user.getUsername());
             ps.setString(2, user.getPasswordHash());
             ps.setString(3, user.getRole());
             ps.setString(4, user.getFullName());
-            return ps.executeUpdate() > 0;
+            if (ps.executeUpdate() != 1) return false;
+            try (ResultSet keys = ps.getGeneratedKeys()) {
+                if (keys.next()) user.setId(keys.getInt(1));
+            }
+            return user.getId() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
         }

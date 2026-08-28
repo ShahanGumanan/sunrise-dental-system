@@ -6,4 +6,5 @@ import java.util.List;
 public interface DentistDAO {
     List<Dentist> findAll();
     Dentist findById(int id);
+    boolean ensureProfileForUser(int userId);
 }

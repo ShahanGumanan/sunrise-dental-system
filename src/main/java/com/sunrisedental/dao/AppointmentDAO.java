@@ -5,9 +5,12 @@ import java.util.List;
 
 public interface AppointmentDAO {
     boolean create(Appointment appointment);
+    boolean existsActiveAppointment(int dentistId, java.time.LocalDate date, java.time.LocalTime time, int excludedId);
     Appointment findByAppointmentNumber(String number);
+    boolean update(Appointment appointment);
     List<Appointment> findByDate(java.time.LocalDate date);
     List<Appointment> findAll();
+    List<Appointment> findByDentistUserId(int userId);
     boolean updateStatus(int id, String status);
     List<Appointment> findByDentistUserIdAndDate(int userId, java.time.LocalDate date);
 }

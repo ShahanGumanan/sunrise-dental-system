@@ -8,6 +8,7 @@ import java.util.Properties;
 public class DatabaseConnection {
     private static DatabaseConnection instance;
     private Connection connection;
+    private Properties properties;
 
     private DatabaseConnection() {
         try (InputStream input = getClass().getClassLoader().getResourceAsStream("db.properties")) {
@@ -16,18 +17,13 @@ public class DatabaseConnection {
                 throw new RuntimeException("Sorry, unable to find db.properties");
             }
             prop.load(input);
+            this.properties = prop;
 
-            // Load driver and connect
             Class.forName(prop.getProperty("db.driver"));
-            this.connection = DriverManager.getConnection(
-                prop.getProperty("db.url"),
-                prop.getProperty("db.user"),
-                prop.getProperty("db.password")
-            );
+            openConnection();
             System.out.println("Database connected successfully!");
         } catch (Exception e) {
-            System.err.println("Database connection failed: " + e.getMessage());
-            e.printStackTrace();
+            throw new IllegalStateException("Database connection failed. Check db.properties and ensure MySQL is running.", e);
         }
     }
 
@@ -38,7 +34,22 @@ public class DatabaseConnection {
         return instance;
     }
 
-    public Connection getConnection() {
-        return connection;
+    public synchronized Connection getConnection() {
+        try {
+            if (connection == null || connection.isClosed() || !connection.isValid(2)) {
+                openConnection();
+            }
+            return connection;
+        } catch (Exception e) {
+            throw new IllegalStateException("Database connection is unavailable. Check that MySQL is running.", e);
+        }
+    }
+
+    private void openConnection() throws java.sql.SQLException {
+        connection = DriverManager.getConnection(
+                properties.getProperty("db.url"),
+                properties.getProperty("db.user"),
+                properties.getProperty("db.password")
+        );
     }
 }

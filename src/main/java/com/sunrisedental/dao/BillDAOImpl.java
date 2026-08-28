@@ -68,4 +68,18 @@ public class BillDAOImpl implements BillDAO {
         } catch (SQLException e) { e.printStackTrace(); }
         return false;
     }
+
+    @Override
+    public boolean existsForAppointment(int appointmentId) {
+        String sql = "SELECT 1 FROM bills WHERE appointment_id = ? LIMIT 1";
+        try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
+            ps.setInt(1, appointmentId);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
 }

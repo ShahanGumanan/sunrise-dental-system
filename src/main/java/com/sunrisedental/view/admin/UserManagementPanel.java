@@ -1,5 +1,7 @@
 package com.sunrisedental.view.admin;
 
+import com.sunrisedental.dao.DentistDAO;
+import com.sunrisedental.dao.DentistDAOImpl;
 import com.sunrisedental.dao.UserDAOImpl;
 import com.sunrisedental.model.User;
 import com.sunrisedental.util.PasswordUtil;
@@ -11,11 +13,13 @@ import java.util.List;
 
 public class UserManagementPanel extends JPanel {
     private UserDAOImpl userDAO;
+    private DentistDAO dentistDAO;
     private JTable table;
     private DefaultTableModel tableModel;
 
     public UserManagementPanel() {
         userDAO = new UserDAOImpl();
+        dentistDAO = new DentistDAOImpl();
         setLayout(new BorderLayout(10, 10));
         setBackground(Color.WHITE);
         setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
@@ -48,6 +52,9 @@ public class UserManagementPanel extends JPanel {
         tableModel.setRowCount(0);
         List<User> users = userDAO.findAll();
         for (User u : users) {
+            if ("dentist".equalsIgnoreCase(u.getRole()) && u.isActive()) {
+                dentistDAO.ensureProfileForUser(u.getId());
+            }
             tableModel.addRow(new Object[]{u.getId(), u.getUsername(), u.getFullName(), u.getRole(), u.isActive() ? "Active" : "Inactive"});
         }
     }
@@ -67,13 +74,23 @@ public class UserManagementPanel extends JPanel {
 
         int option = JOptionPane.showConfirmDialog(this, message, "Add New Staff", JOptionPane.OK_CANCEL_OPTION);
         if (option == JOptionPane.OK_OPTION) {
+            if (usernameField.getText().trim().isEmpty() || fullNameField.getText().trim().isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Fields cannot be empty!");
+                return;
+            }
+
             User u = new User();
             u.setFullName(fullNameField.getText());
             u.setUsername(usernameField.getText());
             u.setPasswordHash(PasswordUtil.hash(new String(passwordField.getPassword())));
-            u.setRole(roleCombo.getSelectedItem().toString());
+            String role = roleCombo.getSelectedItem().toString();
+            u.setRole(role);
             
             if (userDAO.create(u)) {
+                if (role.equals("dentist") && !dentistDAO.ensureProfileForUser(u.getId())) {
+                    JOptionPane.showMessageDialog(this, "User was created, but the dentist profile could not be linked.",
+                            "Dentist profile warning", JOptionPane.WARNING_MESSAGE);
+                }
                 JOptionPane.showMessageDialog(this, "Staff added successfully!");
                 loadUsers();
             } else {

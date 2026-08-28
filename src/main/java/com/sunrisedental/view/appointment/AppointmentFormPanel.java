@@ -27,24 +27,33 @@ public class AppointmentFormPanel extends JPanel {
         setBackground(Color.WHITE);
         setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
+        // Top Panel with Title and Refresh Button
+        JPanel topPanel = new JPanel(new BorderLayout());
+        topPanel.setBackground(Color.WHITE);
         JLabel title = new JLabel("Register New Appointment", SwingConstants.LEFT);
         title.setFont(new Font("Arial", Font.BOLD, 22));
         title.setForeground(new Color(0, 102, 204));
-        add(title, BorderLayout.NORTH);
+        topPanel.add(title, BorderLayout.WEST);
+
+        JButton refreshBtn = new JButton("Refresh Dropdowns");
+        refreshBtn.addActionListener(e -> refreshDropdowns());
+        topPanel.add(refreshBtn, BorderLayout.EAST);
+        add(topPanel, BorderLayout.NORTH);
 
         JPanel formPanel = new JPanel(new GridLayout(6, 2, 10, 20));
         formPanel.setBackground(Color.WHITE);
         formPanel.setBorder(BorderFactory.createEmptyBorder(20, 0, 20, 0));
 
-        // Initialize Dropdowns by fetching data from DB
-        patientCombo = new JComboBox<>(fetchPatients());
-        dentistCombo = new JComboBox<>(fetchDentists());
-        treatmentCombo = new JComboBox<>(fetchTreatments());
+        patientCombo = new JComboBox<>();
+        dentistCombo = new JComboBox<>();
+        treatmentCombo = new JComboBox<>();
+        refreshDropdowns(); // Load data
         
-        dateField = new JTextField(LocalDate.now().plusDays(1).toString()); // Default to tomorrow
+        dateField = new JTextField(LocalDate.now().plusDays(1).toString()); 
         dateField.setBorder(BorderFactory.createTitledBorder("Date (YYYY-MM-DD)"));
 
-        String[] times = {"09:00", "09:30", "10:00", "10:30", "11:00", "11:30", "13:00", "13:30", "14:00"};
+        String[] times = {"08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
+            "12:00", "12:30", "13:00", "13:30", "14:00", "14:30", "15:00", "15:30", "16:00", "16:30"};
         timeCombo = new JComboBox<>(times);
 
         notesArea = new JTextArea(3, 20);
@@ -63,7 +72,6 @@ public class AppointmentFormPanel extends JPanel {
         saveBtn.setBackground(new Color(0, 153, 51));
         saveBtn.setForeground(Color.WHITE);
         saveBtn.setFont(new Font("Arial", Font.BOLD, 14));
-        
         saveBtn.addActionListener(e -> saveAppointment());
         
         JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
@@ -72,24 +80,26 @@ public class AppointmentFormPanel extends JPanel {
         add(bottomPanel, BorderLayout.SOUTH);
     }
 
-    private Patient[] fetchPatients() {
-        List<Patient> list = new PatientDAOImpl().findAll();
-        return list.toArray(new Patient[0]);
-    }
+    private void refreshDropdowns() {
+        patientCombo.removeAllItems();
+        dentistCombo.removeAllItems();
+        treatmentCombo.removeAllItems();
 
-    private Dentist[] fetchDentists() {
-        List<Dentist> list = new DentistDAOImpl().findAll();
-        return list.toArray(new Dentist[0]);
-    }
-
-    private Treatment[] fetchTreatments() {
-        List<Treatment> list = new TreatmentDAOImpl().findAll();
-        return list.toArray(new Treatment[0]);
+        for (Patient p : new PatientDAOImpl().findAll()) { patientCombo.addItem(p); }
+        for (Dentist d : new DentistDAOImpl().findAll()) { dentistCombo.addItem(d); }
+        for (Treatment t : new TreatmentDAOImpl().findAll()) { treatmentCombo.addItem(t); }
     }
 
     private void saveAppointment() {
+        // VALIDATION 1: Check if dropdowns are empty
+        if (patientCombo.getSelectedItem() == null || dentistCombo.getSelectedItem() == null || treatmentCombo.getSelectedItem() == null) {
+            JOptionPane.showMessageDialog(this, "Error: You must have at least 1 Patient, 1 Dentist, and 1 Treatment in the system to book!", "Validation Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
         String dateStr = dateField.getText();
         
+        // VALIDATION 2: Check Date Format
         if (!ValidationUtil.isValidFutureDate(dateStr)) {
             JOptionPane.showMessageDialog(this, "Please enter a valid future date (YYYY-MM-DD).", "Validation Error", JOptionPane.ERROR_MESSAGE);
             return;
@@ -110,6 +120,11 @@ public class AppointmentFormPanel extends JPanel {
 
         if (controller.bookAppointment(appt)) {
             JOptionPane.showMessageDialog(this, "Appointment Booked Successfully!\nNumber: " + appt.getAppointmentNumber());
+            notesArea.setText("");
+            dateField.setText(LocalDate.now().plusDays(1).toString());
+            if (patientCombo.getItemCount() > 0) patientCombo.setSelectedIndex(0);
+            if (dentistCombo.getItemCount() > 0) dentistCombo.setSelectedIndex(0);
+            if (treatmentCombo.getItemCount() > 0) treatmentCombo.setSelectedIndex(0);
         } else {
             JOptionPane.showMessageDialog(this, "Failed to book appointment. Please try again.", "Error", JOptionPane.ERROR_MESSAGE);
         }

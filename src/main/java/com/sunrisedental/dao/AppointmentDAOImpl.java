@@ -14,6 +14,13 @@ public class AppointmentDAOImpl implements AppointmentDAO {
 
     @Override
     public boolean create(Appointment appt) {
+        if (appt == null || appt.getPatient() == null || appt.getDentist() == null || appt.getTreatment() == null
+                || appt.getAppointmentDate() == null || appt.getAppointmentTime() == null) {
+            return false;
+        }
+        if (existsActiveAppointment(appt.getDentist().getId(), appt.getAppointmentDate(), appt.getAppointmentTime(), appt.getId())) {
+            return false;
+        }
         String sql = "INSERT INTO appointments (appointment_number, patient_id, dentist_id, treatment_id, appointment_date, appointment_time, status, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
             ps.setString(1, appt.getAppointmentNumber());
@@ -33,10 +40,31 @@ public class AppointmentDAOImpl implements AppointmentDAO {
     }
 
     @Override
+    public boolean existsActiveAppointment(int dentistId, java.time.LocalDate date, java.time.LocalTime time, int excludedId) {
+        String sql = "SELECT 1 FROM appointments WHERE dentist_id = ? AND appointment_date = ? "
+                + "AND appointment_time = ? AND status <> 'cancelled' AND id <> ? LIMIT 1";
+        try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
+            ps.setInt(1, dentistId);
+            ps.setDate(2, Date.valueOf(date));
+            ps.setTime(3, Time.valueOf(time));
+            ps.setInt(4, excludedId);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    @Override
     public Appointment findByAppointmentNumber(String number) {
-        String sql = "SELECT a.*, p.name as p_name, t.name as t_name, t.base_fee, t.consultation_fee " +
+        String sql = "SELECT a.*, p.name as p_name, d_u.full_name as d_name, t.name as t_name, " +
+                 "t.base_fee, t.consultation_fee " +
                      "FROM appointments a " +
                      "JOIN patients p ON a.patient_id = p.id " +
+                 "JOIN dentists d ON a.dentist_id = d.id " +
+                 "JOIN users d_u ON d.user_id = d_u.id " +
                      "JOIN treatments t ON a.treatment_id = t.id " +
                      "WHERE a.appointment_number = ?";
 
@@ -47,16 +75,27 @@ public class AppointmentDAOImpl implements AppointmentDAO {
                     Appointment appt = new Appointment();
                     appt.setId(rs.getInt("id"));
                     appt.setAppointmentNumber(rs.getString("appointment_number"));
+                    appt.setAppointmentDate(rs.getDate("appointment_date").toLocalDate());
+                    appt.setAppointmentTime(rs.getTime("appointment_time").toLocalTime());
+                    appt.setStatus(rs.getString("status"));
+                    appt.setNotes(rs.getString("notes"));
 
                     com.sunrisedental.model.Patient patient = new com.sunrisedental.model.Patient();
+                    patient.setId(rs.getInt("patient_id"));
                     patient.setName(rs.getString("p_name"));
                     appt.setPatient(patient);
 
                     com.sunrisedental.model.Treatment treatment = new com.sunrisedental.model.Treatment();
+                    treatment.setId(rs.getInt("treatment_id"));
                     treatment.setName(rs.getString("t_name"));
                     treatment.setBaseFee(rs.getDouble("base_fee"));
                     treatment.setConsultationFee(rs.getDouble("consultation_fee"));
                     appt.setTreatment(treatment);
+
+                    com.sunrisedental.model.Dentist dentist = new com.sunrisedental.model.Dentist();
+                    dentist.setId(rs.getInt("dentist_id"));
+                    dentist.setFullName(rs.getString("d_name"));
+                    appt.setDentist(dentist);
 
                     return appt;
                 }
@@ -65,6 +104,23 @@ public class AppointmentDAOImpl implements AppointmentDAO {
             e.printStackTrace();
         }
         return null;
+    }
+
+    @Override
+    public boolean update(Appointment appt) {
+        if (appt == null || appt.getAppointmentDate() == null || appt.getAppointmentTime() == null) return false;
+        if (existsActiveAppointment(appt.getDentist().getId(), appt.getAppointmentDate(), appt.getAppointmentTime(), appt.getId())) return false;
+        String sql = "UPDATE appointments SET appointment_date = ?, appointment_time = ?, notes = ? WHERE id = ? AND status = 'scheduled'";
+        try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
+            ps.setDate(1, Date.valueOf(appt.getAppointmentDate()));
+            ps.setTime(2, Time.valueOf(appt.getAppointmentTime()));
+            ps.setString(3, appt.getNotes());
+            ps.setInt(4, appt.getId());
+            return ps.executeUpdate() == 1;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
     @Override
@@ -129,6 +185,25 @@ public class AppointmentDAOImpl implements AppointmentDAO {
     }
 
     @Override
+    public List<Appointment> findByDentistUserId(int userId) {
+        List<Appointment> list = new ArrayList<>();
+        String sql = "SELECT a.*, p.name as p_name, d_u.full_name as d_name, t.name as t_name "
+                + "FROM appointments a JOIN patients p ON a.patient_id = p.id "
+                + "JOIN dentists d ON a.dentist_id = d.id JOIN users d_u ON d.user_id = d_u.id "
+                + "JOIN treatments t ON a.treatment_id = t.id WHERE d.user_id = ? "
+                + "ORDER BY a.appointment_date DESC, a.appointment_time";
+        try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) list.add(mapAppointmentFull(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    @Override
     public boolean updateStatus(int id, String status) {
         String sql = "UPDATE appointments SET status = ? WHERE id = ?";
         try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
@@ -174,14 +249,17 @@ public class AppointmentDAOImpl implements AppointmentDAO {
         appt.setStatus(rs.getString("status"));
 
         com.sunrisedental.model.Patient patient = new com.sunrisedental.model.Patient();
+        patient.setId(rs.getInt("patient_id"));
         patient.setName(rs.getString("p_name"));
         appt.setPatient(patient);
 
         com.sunrisedental.model.Dentist dentist = new com.sunrisedental.model.Dentist();
+        dentist.setId(rs.getInt("dentist_id"));
         dentist.setFullName(rs.getString("d_name"));
         appt.setDentist(dentist);
 
         com.sunrisedental.model.Treatment treatment = new com.sunrisedental.model.Treatment();
+        treatment.setId(rs.getInt("treatment_id"));
         treatment.setName(rs.getString("t_name"));
         appt.setTreatment(treatment);
         return appt;
