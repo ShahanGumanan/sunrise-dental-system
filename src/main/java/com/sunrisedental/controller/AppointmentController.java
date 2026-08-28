@@ -29,6 +29,15 @@ public class AppointmentController {
         return appointmentDAO.create(appointment);
     }
 
+    public boolean hasAppointmentConflict(Appointment appointment) {
+        if (appointment == null || appointment.getDentist() == null || appointment.getTreatment() == null
+                || appointment.getAppointmentDate() == null || appointment.getAppointmentTime() == null) {
+            return false;
+        }
+        return appointmentDAO.existsActiveAppointment(appointment.getDentist().getId(), appointment.getAppointmentDate(),
+                appointment.getAppointmentTime(), appointment.getTreatment().getDurationMinutes(), appointment.getId());
+    }
+
     public java.util.List<Appointment> getAllAppointments() {
         return appointmentDAO.findAll();
     }

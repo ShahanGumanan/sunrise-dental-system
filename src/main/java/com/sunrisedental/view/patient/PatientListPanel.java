@@ -35,11 +35,36 @@ public class PatientListPanel extends JPanel {
         add(topPanel, BorderLayout.NORTH);
 
         // Setup the Table
-        String[] columns = {"ID", "Name", "Contact Number", "Date of Birth"};
-        tableModel = new DefaultTableModel(columns, 0);
+        String[] columns = {"ID", "Patient Name", "Action"};
+        tableModel = new DefaultTableModel(columns, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
         table = new JTable(tableModel);
         table.setRowHeight(25);
         table.getTableHeader().setFont(new Font("Arial", Font.BOLD, 12));
+        table.getColumnModel().getColumn(2).setPreferredWidth(150);
+        table.getColumnModel().getColumn(2).setCellRenderer((tableComponent, value, isSelected, hasFocus, row, column) -> {
+            JButton button = new JButton(String.valueOf(value));
+            button.setFocusPainted(false);
+            return button;
+        });
+        table.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent event) {
+                int row = table.rowAtPoint(event.getPoint());
+                int column = table.columnAtPoint(event.getPoint());
+                if (row >= 0 && column == 2) {
+                    int patientId = ((Number) tableModel.getValueAt(row, 0)).intValue();
+                    controller.getAllPatients().stream()
+                            .filter(patient -> patient.getId() == patientId)
+                            .findFirst()
+                            .ifPresent(PatientListPanel.this::showPatientDetails);
+                }
+            }
+        });
         
         add(new JScrollPane(table), BorderLayout.CENTER);
 
@@ -51,8 +76,17 @@ public class PatientListPanel extends JPanel {
         tableModel.setRowCount(0); // Clear existing data
         List<Patient> patients = controller.getAllPatients();
         for (Patient p : patients) {
-            Object[] row = { p.getId(), p.getName(), p.getContactNumber(), p.getDateOfBirth() };
+            Object[] row = { p.getId(), p.getName(), "View Full Details" };
             tableModel.addRow(row);
         }
+    }
+
+    private void showPatientDetails(Patient patient) {
+        String details = "Patient ID: " + patient.getId()
+                + "\nFull Name: " + patient.getName()
+                + "\nContact Number: " + patient.getContactNumber()
+                + "\nDate of Birth: " + patient.getDateOfBirth()
+                + "\nHome Address: " + patient.getAddress();
+        JOptionPane.showMessageDialog(this, details, "Patient Details", JOptionPane.INFORMATION_MESSAGE);
     }
 }

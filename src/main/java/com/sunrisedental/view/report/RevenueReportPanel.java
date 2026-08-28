@@ -2,15 +2,17 @@ package com.sunrisedental.view.report;
 
 import com.sunrisedental.controller.ReportController;
 import com.sunrisedental.model.Bill;
+import com.toedter.calendar.JDateChooser;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.time.LocalDate;
 import java.util.List;
+import java.sql.Date;
 
 public class RevenueReportPanel extends JPanel {
     private ReportController controller = new ReportController();
-    private JTextField startField, endField;
+    private JDateChooser startField, endField;
     private DefaultTableModel tableModel;
     private JLabel totalRevenueLbl;
 
@@ -22,8 +24,12 @@ public class RevenueReportPanel extends JPanel {
         // Top Panel
         JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         topPanel.setBackground(Color.WHITE);
-        startField = new JTextField(LocalDate.now().withDayOfMonth(1).toString(), 10);
-        endField = new JTextField(LocalDate.now().toString(), 10);
+        startField = new JDateChooser();
+        startField.setDate(Date.valueOf(LocalDate.now().withDayOfMonth(1)));
+        startField.setDateFormatString("yyyy-MM-dd");
+        endField = new JDateChooser();
+        endField.setDate(Date.valueOf(LocalDate.now()));
+        endField.setDateFormatString("yyyy-MM-dd");
         JButton generateBtn = new JButton("Generate Revenue");
 
         topPanel.add(new JLabel("Start Date:")); topPanel.add(startField);
@@ -52,8 +58,9 @@ public class RevenueReportPanel extends JPanel {
         tableModel.setRowCount(0);
         double totalSum = 0;
         try {
-            LocalDate start = LocalDate.parse(startField.getText());
-            LocalDate end = LocalDate.parse(endField.getText());
+            if (startField.getDate() == null || endField.getDate() == null) throw new IllegalArgumentException();
+            LocalDate start = startField.getDate().toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate();
+            LocalDate end = endField.getDate().toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate();
             List<Bill> list = controller.getRevenueReport(start, end);
             
             for (Bill b : list) {

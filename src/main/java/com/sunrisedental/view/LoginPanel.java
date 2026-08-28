@@ -40,8 +40,7 @@ public class LoginPanel extends JPanel {
             String password = new String(passwordField.getPassword());
 
             if (authController.login(username, password)) {
-                JOptionPane.showMessageDialog(this, "Login Successful!");
-                mainFrame.loadApplication(); // Switch to main app
+                mainFrame.loadApplication();
             } else {
                 JOptionPane.showMessageDialog(this, "Invalid Username or Password", "Login Failed", JOptionPane.ERROR_MESSAGE);
             }

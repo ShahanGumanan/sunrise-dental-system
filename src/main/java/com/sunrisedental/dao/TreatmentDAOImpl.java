@@ -10,6 +10,14 @@ import java.util.List;
 public class TreatmentDAOImpl implements TreatmentDAO {
     private Connection getConnection() { return DatabaseConnection.getInstance().getConnection(); }
 
+    public TreatmentDAOImpl() {
+        try (Statement statement = getConnection().createStatement()) {
+            statement.executeUpdate("ALTER TABLE treatments ADD COLUMN IF NOT EXISTS duration_minutes INT NOT NULL DEFAULT 30");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
     @Override
     public List<Treatment> findAll() {
         List<Treatment> list = new ArrayList<>();
@@ -35,12 +43,13 @@ public class TreatmentDAOImpl implements TreatmentDAO {
 
     @Override
     public boolean create(Treatment treatment) {
-        String sql = "INSERT INTO treatments (name, base_fee, consultation_fee, description) VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO treatments (name, base_fee, consultation_fee, description, duration_minutes) VALUES (?, ?, ?, ?, ?)";
         try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
             ps.setString(1, treatment.getName());
             ps.setDouble(2, treatment.getBaseFee());
             ps.setDouble(3, treatment.getConsultationFee());
             ps.setString(4, treatment.getDescription());
+            ps.setInt(5, treatment.getDurationMinutes());
             return ps.executeUpdate() == 1;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -50,13 +59,14 @@ public class TreatmentDAOImpl implements TreatmentDAO {
 
     @Override
     public boolean update(Treatment treatment) {
-        String sql = "UPDATE treatments SET name = ?, base_fee = ?, consultation_fee = ?, description = ? WHERE id = ?";
+        String sql = "UPDATE treatments SET name = ?, base_fee = ?, consultation_fee = ?, description = ?, duration_minutes = ? WHERE id = ?";
         try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
             ps.setString(1, treatment.getName());
             ps.setDouble(2, treatment.getBaseFee());
             ps.setDouble(3, treatment.getConsultationFee());
             ps.setString(4, treatment.getDescription());
-            ps.setInt(5, treatment.getId());
+            ps.setInt(5, treatment.getDurationMinutes());
+            ps.setInt(6, treatment.getId());
             return ps.executeUpdate() == 1;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -83,6 +93,7 @@ public class TreatmentDAOImpl implements TreatmentDAO {
         t.setBaseFee(rs.getDouble("base_fee"));
         t.setConsultationFee(rs.getDouble("consultation_fee"));
         t.setDescription(rs.getString("description"));
+        t.setDurationMinutes(rs.getInt("duration_minutes"));
         return t;
     }
 }

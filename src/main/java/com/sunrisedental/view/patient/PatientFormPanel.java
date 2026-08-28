@@ -3,14 +3,17 @@ package com.sunrisedental.view.patient;
 import com.sunrisedental.controller.PatientController;
 import com.sunrisedental.model.Patient;
 import com.sunrisedental.util.ValidationUtil;
+import com.toedter.calendar.JDateChooser;
 
 import javax.swing.*;
 import java.awt.*;
 import java.time.LocalDate;
+import java.sql.Date;
 
 public class PatientFormPanel extends JPanel {
     private PatientController controller;
-    private JTextField nameField, contactField, dobField;
+    private JTextField nameField, contactField;
+    private JDateChooser dobField;
     private JTextArea addressArea;
 
     public PatientFormPanel() {
@@ -30,7 +33,9 @@ public class PatientFormPanel extends JPanel {
 
         nameField = new JTextField();
         contactField = new JTextField();
-        dobField = new JTextField("2000-01-01"); // Default placeholder
+        dobField = new JDateChooser();
+        dobField.setDate(Date.valueOf("2000-01-01"));
+        dobField.setDateFormatString("yyyy-MM-dd");
         addressArea = new JTextArea(3, 20);
         addressArea.setBorder(BorderFactory.createLineBorder(Color.GRAY));
 
@@ -57,7 +62,6 @@ public class PatientFormPanel extends JPanel {
     private void savePatient() {
         String name = nameField.getText();
         String contact = contactField.getText();
-        String dob = dobField.getText();
         String address = addressArea.getText();
 
         if (!ValidationUtil.isNotEmpty(name) || !ValidationUtil.isNotEmpty(address)) {
@@ -70,12 +74,17 @@ public class PatientFormPanel extends JPanel {
             return;
         }
 
+        if (dobField.getDate() == null) {
+            JOptionPane.showMessageDialog(this, "Please select a date of birth.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
         try {
             Patient p = new Patient();
             p.setName(name);
             p.setContactNumber(contact);
             p.setAddress(address);
-            p.setDateOfBirth(LocalDate.parse(dob)); // Throws exception if format is wrong
+            p.setDateOfBirth(dobField.getDate().toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate());
 
             if (controller.registerPatient(p)) {
                 JOptionPane.showMessageDialog(this, "Patient Registered Successfully!");

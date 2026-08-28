@@ -6,6 +6,7 @@ public class Treatment {
     private double baseFee;
     private double consultationFee;
     private String description;
+    private int durationMinutes = 30;
 
     // Getters and Setters
     public int getId() { return id; }
@@ -18,6 +19,8 @@ public class Treatment {
     public void setConsultationFee(double consultationFee) { this.consultationFee = consultationFee; }
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
+    public int getDurationMinutes() { return durationMinutes; }
+    public void setDurationMinutes(int durationMinutes) { this.durationMinutes = durationMinutes; }
 
     @Override
     public String toString() { return name; }

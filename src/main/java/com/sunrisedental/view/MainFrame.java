@@ -8,7 +8,6 @@ import com.sunrisedental.view.patient.PatientListPanel;
 import com.sunrisedental.view.admin.UserManagementPanel;
 import com.sunrisedental.view.admin.TreatmentManagementPanel;
 import com.sunrisedental.view.dentist.DentistSchedulePanel;
-import com.sunrisedental.view.report.DailyReportPanel;
 import com.sunrisedental.view.report.RevenueReportPanel;
 import com.sunrisedental.view.appointment.AppointmentDirectoryPanel;
 import com.sunrisedental.view.help.HelpPanel;
@@ -88,7 +87,6 @@ public class MainFrame extends JFrame {
         contentPanel.add(new BillFormPanel(), "BILLING");
         contentPanel.add(new UserManagementPanel(), "USERS");
         contentPanel.add(new DentistSchedulePanel(), "SCHEDULE");
-        contentPanel.add(new DailyReportPanel(), "DAILY_REPORT");
         contentPanel.add(new RevenueReportPanel(), "REVENUE_REPORT");
         contentPanel.add(new AppointmentDirectoryPanel(), "APPOINTMENT_LIST");
         contentPanel.add(new HelpPanel(), "HELP");
@@ -102,7 +100,6 @@ public class MainFrame extends JFrame {
             addNavButton("Appt Directory", "APPOINTMENT_LIST");
             addNavButton("Patients", "PATIENTS");
             addNavButton("Billing", "BILLING");
-            addNavButton("Daily Report", "DAILY_REPORT");
         }
 
         if (SessionManager.hasRole("admin")) {

@@ -33,7 +33,8 @@ CREATE TABLE IF NOT EXISTS treatments (
     name VARCHAR(100) NOT NULL,
     base_fee DECIMAL(10,2) NOT NULL,
     consultation_fee DECIMAL(10,2) NOT NULL DEFAULT 500.00,
-    description TEXT
+    description TEXT,
+    duration_minutes INT NOT NULL DEFAULT 30
 );
 
 CREATE TABLE IF NOT EXISTS appointments (

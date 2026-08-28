@@ -3,10 +3,13 @@ package com.sunrisedental.view.appointment;
 import com.sunrisedental.controller.AppointmentController;
 import com.sunrisedental.model.Appointment;
 import com.sunrisedental.util.SessionManager;
+import com.toedter.calendar.JDateChooser;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.List;
 
 public class AppointmentDirectoryPanel extends JPanel {
@@ -33,7 +36,7 @@ public class AppointmentDirectoryPanel extends JPanel {
         topPanel.setBackground(Color.WHITE);
         topPanel.add(new JLabel("Appointments"));
         searchField = new JTextField(14);
-        searchField.setToolTipText("Search appointment number or patient");
+        searchField.setToolTipText("Search by appointment number");
         statusFilter = new JComboBox<>(new String[]{"All statuses", "scheduled", "completed", "cancelled"});
         
         JButton refreshBtn = new JButton("Refresh");
@@ -43,7 +46,7 @@ public class AppointmentDirectoryPanel extends JPanel {
         cancelBtn.setForeground(Color.WHITE);
         
         topPanel.add(refreshBtn);
-        topPanel.add(new JLabel("Search:"));
+        topPanel.add(new JLabel("Search Appointment Number:"));
         topPanel.add(searchField);
         topPanel.add(statusFilter);
         topPanel.add(editBtn);
@@ -51,14 +54,17 @@ public class AppointmentDirectoryPanel extends JPanel {
         add(topPanel, BorderLayout.NORTH);
 
         // Table
-        String[] cols = {"ID", "Appt No", "Date", "Time", "Patient", "Dentist", "Treatment", "Status"};
+        String[] cols = {"ID", "Appt No", "Date", "Time", "Patient", "Dentist", "Treatment", "Status", "Notes"};
         tableModel = new DefaultTableModel(cols, 0);
         table = new JTable(tableModel);
         add(new JScrollPane(table), BorderLayout.CENTER);
 
         loadData();
 
-        refreshBtn.addActionListener(e -> loadData());
+        refreshBtn.addActionListener(e -> {
+            statusFilter.setSelectedItem("All statuses");
+            loadData();
+        });
         searchField.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
             public void insertUpdate(javax.swing.event.DocumentEvent e) { applyFilter(); }
             public void removeUpdate(javax.swing.event.DocumentEvent e) { applyFilter(); }
@@ -106,7 +112,16 @@ public class AppointmentDirectoryPanel extends JPanel {
         currentList = dentistOnly
             ? controller.getDentistAppointments(SessionManager.getCurrentUser().getId())
             : controller.getAllAppointments();
+        LocalDateTime now = LocalDateTime.now();
+        currentList.sort((first, second) -> Long.compare(
+                distanceFromNow(first, now), distanceFromNow(second, now)));
         applyFilter();
+    }
+
+    private long distanceFromNow(Appointment appointment, LocalDateTime now) {
+        LocalDateTime appointmentDateTime = LocalDateTime.of(
+                appointment.getAppointmentDate(), appointment.getAppointmentTime());
+        return Math.abs(Duration.between(now, appointmentDateTime).toSeconds());
     }
 
     private void applyFilter() {
@@ -115,27 +130,31 @@ public class AppointmentDirectoryPanel extends JPanel {
         String query = searchField == null ? "" : searchField.getText().trim().toLowerCase();
         String selectedStatus = statusFilter == null ? "All statuses" : (String) statusFilter.getSelectedItem();
         for (Appointment a : currentList) {
-            boolean matchesText = query.isEmpty()
-                    || a.getAppointmentNumber().toLowerCase().contains(query)
-                    || (a.getPatient() != null && a.getPatient().getName().toLowerCase().contains(query));
+            boolean matchesText = query.isEmpty() || a.getAppointmentNumber().toLowerCase().contains(query);
             boolean matchesStatus = "All statuses".equals(selectedStatus) || selectedStatus.equals(a.getStatus());
             if (!matchesText || !matchesStatus) continue;
             tableModel.addRow(new Object[]{
                 a.getId(), a.getAppointmentNumber(), a.getAppointmentDate(), a.getAppointmentTime(),
-                a.getPatient().getName(), a.getDentist().getFullName(), a.getTreatment().getName(), a.getStatus()
+                a.getPatient().getName(), a.getDentist().getFullName(), a.getTreatment().getName(),
+                a.getStatus(), a.getNotes() == null ? "" : a.getNotes()
             });
         }
     }
 
     private void showDetails(Appointment appointment) {
-        String details = "Number: " + appointment.getAppointmentNumber()
-                + "\nPatient: " + appointment.getPatient().getName()
-                + "\nDentist: " + appointment.getDentist().getFullName()
-                + "\nTreatment: " + appointment.getTreatment().getName()
-                + "\nDate: " + appointment.getAppointmentDate()
-                + "\nTime: " + appointment.getAppointmentTime()
-                + "\nStatus: " + appointment.getStatus()
-                + "\nNotes: " + (appointment.getNotes() == null ? "" : appointment.getNotes());
+        String details = "Appointment ID: " + appointment.getId()
+            + "\nAppointment Number: " + appointment.getAppointmentNumber()
+            + "\nDate: " + appointment.getAppointmentDate()
+            + "\nTime: " + appointment.getAppointmentTime()
+            + "\nStatus: " + appointment.getStatus()
+            + "\nDentist: " + appointment.getDentist().getFullName()
+            + "\nTreatment: " + appointment.getTreatment().getName()
+            + "\nNotes: " + (appointment.getNotes() == null ? "" : appointment.getNotes())
+            + "\n\nPatient ID: " + appointment.getPatient().getId()
+            + "\nPatient Name: " + appointment.getPatient().getName()
+            + "\nContact Number: " + appointment.getPatient().getContactNumber()
+            + "\nDate of Birth: " + appointment.getPatient().getDateOfBirth()
+            + "\nAddress: " + appointment.getPatient().getAddress();
         JOptionPane.showMessageDialog(this, details, "Appointment details", JOptionPane.INFORMATION_MESSAGE);
     }
 
@@ -152,19 +171,29 @@ public class AppointmentDirectoryPanel extends JPanel {
             JOptionPane.showMessageDialog(this, "Only scheduled appointments can be edited.");
             return;
         }
-        JTextField date = new JTextField(appointment.getAppointmentDate().toString());
+        JDateChooser date = new JDateChooser();
+        date.setDate(java.sql.Date.valueOf(appointment.getAppointmentDate()));
+        date.setDateFormatString("yyyy-MM-dd");
         JTextField time = new JTextField(appointment.getAppointmentTime().toString());
         JTextArea notes = new JTextArea(appointment.getNotes() == null ? "" : appointment.getNotes(), 3, 20);
-        Object[] message = {"Date (YYYY-MM-DD):", date, "Time (HH:MM):", time, "Notes:", new JScrollPane(notes)};
-        if (JOptionPane.showConfirmDialog(this, message, "Edit appointment", JOptionPane.OK_CANCEL_OPTION) != JOptionPane.OK_OPTION) return;
+        Object[] dialogFields = {"Date (YYYY-MM-DD):", date, "Time (HH:MM):", time, "Notes:", new JScrollPane(notes)};
+        if (JOptionPane.showConfirmDialog(this, dialogFields, "Edit appointment", JOptionPane.OK_CANCEL_OPTION) != JOptionPane.OK_OPTION) return;
         try {
-            appointment.setAppointmentDate(java.time.LocalDate.parse(date.getText().trim()));
+            if (date.getDate() == null) throw new IllegalArgumentException();
+            appointment.setAppointmentDate(date.getDate().toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate());
             appointment.setAppointmentTime(java.time.LocalTime.parse(time.getText().trim()));
             appointment.setNotes(notes.getText().trim());
+            if (controller.hasAppointmentConflict(appointment)) {
+                throw new IllegalStateException("This time slot is already booked.");
+            }
             if (!controller.updateAppointment(appointment)) throw new IllegalStateException();
             loadData();
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Enter a valid future date and time. The slot may already be booked.",
+            String errorMessage = "This time slot is already booked. Choose another date or time.";
+            if (!(ex instanceof IllegalStateException) || !"This time slot is already booked.".equals(ex.getMessage())) {
+                errorMessage = "Enter a valid future date and time.";
+            }
+            JOptionPane.showMessageDialog(this, errorMessage,
                     "Update failed", JOptionPane.ERROR_MESSAGE);
         }
     }
