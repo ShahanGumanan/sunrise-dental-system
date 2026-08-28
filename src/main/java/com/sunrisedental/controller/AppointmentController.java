@@ -60,6 +60,14 @@ public class AppointmentController {
         return appointmentDAO.updateStatus(id, "cancelled");
     }
 
+    public boolean confirmAppointment(int id, int dentistUserId) {
+        return appointmentDAO.updateStatusForDentist(id, "confirmed", dentistUserId);
+    }
+
+    public boolean cancelAppointmentByDentist(int id, int dentistUserId) {
+        return appointmentDAO.updateStatusForDentist(id, "cancelled", dentistUserId);
+    }
+
     public java.util.List<Appointment> getDentistSchedule(int userId, java.time.LocalDate date) {
         return appointmentDAO.findByDentistUserIdAndDate(userId, date);
     }

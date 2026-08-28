@@ -20,7 +20,8 @@ public class BillController {
     }
 
     public Bill generateBill(Appointment appt, String billType) {
-        if (appt == null || appt.getTreatment() == null || appt.getId() <= 0 || billType == null || billType.isBlank()
+        if (appt == null || appt.getTreatment() == null || appt.getId() <= 0 || !"confirmed".equals(appt.getStatus())
+            || billType == null || billType.isBlank()
                 || billDAO.existsForAppointment(appt.getId())) {
             return null;
         }

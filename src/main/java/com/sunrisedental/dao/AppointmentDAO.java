@@ -14,5 +14,7 @@ public interface AppointmentDAO {
     List<Appointment> findAll();
     List<Appointment> findByDentistUserId(int userId);
     boolean updateStatus(int id, String status);
+    boolean updateStatusForDentist(int id, String status, int dentistUserId);
+    void markCompletedAppointments();
     List<Appointment> findByDentistUserIdAndDate(int userId, java.time.LocalDate date);
 }

@@ -169,7 +169,7 @@ public class AppointmentFormPanel extends JPanel {
         }
         appt.setAppointmentTime(LocalTime.parse(timeStr));
         
-        appt.setStatus("scheduled");
+        appt.setStatus("pending");
         appt.setNotes(notesArea.getText());
 
         if (controller.hasAppointmentConflict(appt)) {

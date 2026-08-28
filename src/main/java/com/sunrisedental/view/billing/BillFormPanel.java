@@ -14,8 +14,9 @@ public class BillFormPanel extends JPanel {
     private Appointment currentAppt;
 
     private JTextField searchField;
-    private JLabel pNameLbl, tNameLbl, baseFeeLbl, totalLbl;
+    private JLabel pNameLbl, dentistLbl, tNameLbl, baseFeeLbl, totalLbl;
     private JRadioButton stdRadio, emgRadio, childRadio;
+    private JButton generateBtn;
 
     public BillFormPanel() {
         apptController = new AppointmentController();
@@ -35,11 +36,12 @@ public class BillFormPanel extends JPanel {
         add(topPanel, BorderLayout.NORTH);
 
         // 2. Middle Panel (Details & Calculation)
-        JPanel middlePanel = new JPanel(new GridLayout(6, 2, 10, 10));
+        JPanel middlePanel = new JPanel(new GridLayout(7, 2, 10, 10));
         middlePanel.setBackground(Color.WHITE);
         middlePanel.setBorder(BorderFactory.createTitledBorder("Billing Details"));
 
         pNameLbl = new JLabel("-");
+        dentistLbl = new JLabel("-");
         tNameLbl = new JLabel("-");
         baseFeeLbl = new JLabel("-");
         totalLbl = new JLabel("-");
@@ -47,6 +49,7 @@ public class BillFormPanel extends JPanel {
         totalLbl.setForeground(Color.RED);
 
         middlePanel.add(new JLabel("Patient Name:")); middlePanel.add(pNameLbl);
+        middlePanel.add(new JLabel("Dentist:")); middlePanel.add(dentistLbl);
         middlePanel.add(new JLabel("Treatment:")); middlePanel.add(tNameLbl);
         middlePanel.add(new JLabel("Base Treatment Fee:")); middlePanel.add(baseFeeLbl);
 
@@ -68,7 +71,7 @@ public class BillFormPanel extends JPanel {
 
         // 3. Bottom Panel (Actions)
         JButton calcBtn = new JButton("Calculate Total");
-        JButton generateBtn = new JButton("Generate Bill");
+        generateBtn = new JButton("Generate Bill");
         generateBtn.setBackground(new Color(0, 153, 51));
         generateBtn.setForeground(Color.WHITE);
         generateBtn.setEnabled(false); // Disabled until calculated
@@ -85,11 +88,7 @@ public class BillFormPanel extends JPanel {
             // Since we didn't add findByApptNo to ApptController yet, we call DAO directly for brevity
             currentAppt = new com.sunrisedental.dao.AppointmentDAOImpl().findByAppointmentNumber(apptNo);
             if (currentAppt != null) {
-                pNameLbl.setText(currentAppt.getPatient().getName());
-                tNameLbl.setText(currentAppt.getTreatment().getName());
-                baseFeeLbl.setText("Rs. " + currentAppt.getTreatment().getBaseFee());
-                totalLbl.setText("-");
-                generateBtn.setEnabled(false);
+                loadAppointment(currentAppt);
             } else {
                 JOptionPane.showMessageDialog(this, "Appointment not found!");
             }
@@ -118,5 +117,35 @@ public class BillFormPanel extends JPanel {
                 generateBtn.setEnabled(false);
             }
         });
+
+        stdRadio.addActionListener(e -> refreshTotal());
+        emgRadio.addActionListener(e -> refreshTotal());
+        childRadio.addActionListener(e -> refreshTotal());
+    }
+
+    public void loadAppointment(Appointment appointment) {
+        currentAppt = appointment;
+        searchField.setText(appointment.getAppointmentNumber());
+        pNameLbl.setText(appointment.getPatient().getName());
+        dentistLbl.setText(appointment.getDentist().getFullName());
+        tNameLbl.setText(appointment.getTreatment().getName());
+        baseFeeLbl.setText("Rs. " + appointment.getTreatment().getBaseFee());
+        calculateTotal();
+        generateBtn.setEnabled("confirmed".equalsIgnoreCase(appointment.getStatus()));
+        }
+
+    private void refreshTotal() {
+        calculateTotal();
+        generateBtn.setEnabled(currentAppt != null && "confirmed".equalsIgnoreCase(currentAppt.getStatus()));
+    }
+
+        private void calculateTotal() {
+        if (currentAppt == null) return;
+        String type = stdRadio.isSelected() ? "standard" : (emgRadio.isSelected() ? "emergency" : "child");
+        com.sunrisedental.pattern.strategy.FeeCalculator calculator =
+            com.sunrisedental.pattern.factory.BillFactory.getCalculator(type);
+        double total = calculator.calculateTreatmentFee(currentAppt.getTreatment().getBaseFee())
+            + currentAppt.getTreatment().getConsultationFee();
+        totalLbl.setText("Rs. " + total);
     }
 }

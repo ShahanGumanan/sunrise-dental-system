@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS appointments (
     treatment_id INT NOT NULL,
     appointment_date DATE NOT NULL,
     appointment_time TIME NOT NULL,
-    status ENUM('scheduled', 'completed', 'cancelled') NOT NULL DEFAULT 'scheduled',
+    status ENUM('pending', 'confirmed', 'cancelled', 'completed') NOT NULL DEFAULT 'pending',
     notes TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (patient_id) REFERENCES patients(id),

@@ -1,16 +1,24 @@
 package com.sunrisedental.view.appointment;
 
 import com.sunrisedental.controller.AppointmentController;
+import com.sunrisedental.dao.DentistDAOImpl;
+import com.sunrisedental.dao.PatientDAOImpl;
+import com.sunrisedental.dao.TreatmentDAOImpl;
 import com.sunrisedental.model.Appointment;
+import com.sunrisedental.model.Dentist;
+import com.sunrisedental.model.Patient;
+import com.sunrisedental.model.Treatment;
 import com.sunrisedental.util.SessionManager;
 import com.toedter.calendar.JDateChooser;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.function.Consumer;
 
 public class AppointmentDirectoryPanel extends JPanel {
     private AppointmentController controller = new AppointmentController();
@@ -20,13 +28,19 @@ public class AppointmentDirectoryPanel extends JPanel {
     private final boolean dentistOnly;
     private JTextField searchField;
     private JComboBox<String> statusFilter;
+    private final Consumer<Appointment> billAction;
 
     public AppointmentDirectoryPanel() {
-        this(false);
+        this(false, null);
     }
 
     public AppointmentDirectoryPanel(boolean dentistOnly) {
+        this(dentistOnly, null);
+    }
+
+    public AppointmentDirectoryPanel(boolean dentistOnly, Consumer<Appointment> billAction) {
         this.dentistOnly = dentistOnly;
+        this.billAction = billAction;
         setLayout(new BorderLayout(10, 10));
         setBackground(Color.WHITE);
         setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
@@ -37,11 +51,10 @@ public class AppointmentDirectoryPanel extends JPanel {
         topPanel.add(new JLabel("Appointments"));
         searchField = new JTextField(14);
         searchField.setToolTipText("Search by appointment number");
-        statusFilter = new JComboBox<>(new String[]{"All statuses", "scheduled", "completed", "cancelled"});
+        statusFilter = new JComboBox<>(new String[]{"All statuses", "pending", "confirmed", "cancelled", "completed"});
         
         JButton refreshBtn = new JButton("Refresh");
         JButton cancelBtn = new JButton("Cancel Selected Appointment");
-        JButton editBtn = new JButton("Edit Selected");
         cancelBtn.setBackground(Color.RED);
         cancelBtn.setForeground(Color.WHITE);
         
@@ -49,14 +62,33 @@ public class AppointmentDirectoryPanel extends JPanel {
         topPanel.add(new JLabel("Search Appointment Number:"));
         topPanel.add(searchField);
         topPanel.add(statusFilter);
-        topPanel.add(editBtn);
         topPanel.add(cancelBtn);
+        cancelBtn.setVisible(!dentistOnly);
         add(topPanel, BorderLayout.NORTH);
 
         // Table
-        String[] cols = {"ID", "Appt No", "Date", "Time", "Patient", "Dentist", "Treatment", "Status", "Notes"};
+        String[] cols = {"ID", "Appt No", "Date", "Time", "Patient", "Dentist", "Treatment", "Status", "Notes", "Action"};
         tableModel = new DefaultTableModel(cols, 0);
         table = new JTable(tableModel);
+        table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean selected,
+                    boolean focused, int row, int column) {
+                Component component = super.getTableCellRendererComponent(table, value, selected, focused, row, column);
+                if (!selected && column == 7) {
+                    component.setForeground("cancelled".equals(value) ? Color.RED
+                            : "confirmed".equals(value) ? new Color(0, 128, 0) : Color.BLACK);
+                }
+                return component;
+            }
+        });
+        table.getColumnModel().getColumn(9).setPreferredWidth(130);
+        table.getColumnModel().getColumn(9).setCellRenderer((tableComponent, value, isSelected, hasFocus, row, column) -> {
+            JButton button = new JButton(String.valueOf(value));
+            button.setFocusPainted(false);
+            button.setEnabled(value != null && !String.valueOf(value).isBlank());
+            return button;
+        });
         add(new JScrollPane(table), BorderLayout.CENTER);
 
         loadData();
@@ -71,12 +103,24 @@ public class AppointmentDirectoryPanel extends JPanel {
             public void changedUpdate(javax.swing.event.DocumentEvent e) { applyFilter(); }
         });
         statusFilter.addActionListener(e -> applyFilter());
-        editBtn.addActionListener(e -> editSelected());
         table.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override public void mouseClicked(java.awt.event.MouseEvent e) {
                 if (e.getClickCount() == 2 && table.getSelectedRow() >= 0) {
                     int id = ((Number) tableModel.getValueAt(table.getSelectedRow(), 0)).intValue();
                     currentList.stream().filter(a -> a.getId() == id).findFirst().ifPresent(AppointmentDirectoryPanel.this::showDetails);
+                }
+                if (e.getClickCount() == 1 && table.columnAtPoint(e.getPoint()) == 9) {
+                    int row = table.rowAtPoint(e.getPoint());
+                    if (row < 0) return;
+                    String action = String.valueOf(tableModel.getValueAt(row, 9));
+                    int id = ((Number) tableModel.getValueAt(row, 0)).intValue();
+                    Appointment appointment = currentList.stream().filter(a -> a.getId() == id).findFirst().orElse(null);
+                    if (appointment == null) return;
+                    if ("Edit".equals(action)) {
+                        editAppointment(appointment);
+                    } else if (billAction != null && "Create Bill".equals(action)) {
+                        billAction.accept(appointment);
+                    }
                 }
             }
         });
@@ -90,8 +134,8 @@ public class AppointmentDirectoryPanel extends JPanel {
             int id = (int) tableModel.getValueAt(row, 0);
             String status = (String) tableModel.getValueAt(row, 7);
             
-            if (status.equals("cancelled") || status.equals("completed")) {
-                JOptionPane.showMessageDialog(this, "Only scheduled appointments can be cancelled.");
+            if (!status.equals("pending")) {
+                JOptionPane.showMessageDialog(this, "Only pending appointments can be cancelled.");
                 return;
             }
 
@@ -136,7 +180,9 @@ public class AppointmentDirectoryPanel extends JPanel {
             tableModel.addRow(new Object[]{
                 a.getId(), a.getAppointmentNumber(), a.getAppointmentDate(), a.getAppointmentTime(),
                 a.getPatient().getName(), a.getDentist().getFullName(), a.getTreatment().getName(),
-                a.getStatus(), a.getNotes() == null ? "" : a.getNotes()
+                a.getStatus(), a.getNotes() == null ? "" : a.getNotes(),
+                "pending".equals(a.getStatus()) ? "Edit" :
+                    ("confirmed".equals(a.getStatus()) && billAction != null ? "Create Bill" : "")
             });
         }
     }
@@ -158,43 +204,50 @@ public class AppointmentDirectoryPanel extends JPanel {
         JOptionPane.showMessageDialog(this, details, "Appointment details", JOptionPane.INFORMATION_MESSAGE);
     }
 
-    private void editSelected() {
-        int row = table.getSelectedRow();
-        if (row < 0) {
-            JOptionPane.showMessageDialog(this, "Select a scheduled appointment first.");
-            return;
-        }
-        Appointment appointment = currentList.stream()
-                .filter(a -> a.getId() == ((Number) tableModel.getValueAt(row, 0)).intValue())
-                .findFirst().orElse(null);
-        if (appointment == null || !"scheduled".equals(appointment.getStatus())) {
-            JOptionPane.showMessageDialog(this, "Only scheduled appointments can be edited.");
-            return;
-        }
-        JDateChooser date = new JDateChooser();
-        date.setDate(java.sql.Date.valueOf(appointment.getAppointmentDate()));
+    private void editAppointment(Appointment appointment) {
+        JComboBox<Patient> patient = new JComboBox<>(new PatientDAOImpl().findAll().toArray(new Patient[0]));
+        JComboBox<Dentist> dentist = new JComboBox<>(new DentistDAOImpl().findAll().toArray(new Dentist[0]));
+        JComboBox<Treatment> treatment = new JComboBox<>(new TreatmentDAOImpl().findAll().toArray(new Treatment[0]));
+        patient.setSelectedItem(findById(patient, appointment.getPatient().getId()));
+        dentist.setSelectedItem(findById(dentist, appointment.getDentist().getId()));
+        treatment.setSelectedItem(findById(treatment, appointment.getTreatment().getId()));
+
+        JDateChooser date = new JDateChooser(java.sql.Date.valueOf(appointment.getAppointmentDate()));
         date.setDateFormatString("yyyy-MM-dd");
-        JTextField time = new JTextField(appointment.getAppointmentTime().toString());
+        String[] times = {"08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
+                "12:00", "12:30", "13:00", "13:30", "14:00", "14:30", "15:00", "15:30", "16:00", "16:30"};
+        JComboBox<String> time = new JComboBox<>(times);
+        time.setSelectedItem(appointment.getAppointmentTime().toString());
         JTextArea notes = new JTextArea(appointment.getNotes() == null ? "" : appointment.getNotes(), 3, 20);
-        Object[] dialogFields = {"Date (YYYY-MM-DD):", date, "Time (HH:MM):", time, "Notes:", new JScrollPane(notes)};
-        if (JOptionPane.showConfirmDialog(this, dialogFields, "Edit appointment", JOptionPane.OK_CANCEL_OPTION) != JOptionPane.OK_OPTION) return;
+        Object[] fields = {"Select Patient:", patient, "Select Dentist:", dentist, "Select Treatment:", treatment,
+                "Appointment Date:", date, "Time Slot:", time, "Treatment Notes:", new JScrollPane(notes)};
+        if (JOptionPane.showConfirmDialog(this, fields, "Edit Pending Appointment", JOptionPane.OK_CANCEL_OPTION)
+                != JOptionPane.OK_OPTION) return;
+
         try {
-            if (date.getDate() == null) throw new IllegalArgumentException();
+            appointment.setPatient((Patient) patient.getSelectedItem());
+            appointment.setDentist((Dentist) dentist.getSelectedItem());
+            appointment.setTreatment((Treatment) treatment.getSelectedItem());
             appointment.setAppointmentDate(date.getDate().toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate());
-            appointment.setAppointmentTime(java.time.LocalTime.parse(time.getText().trim()));
+            appointment.setAppointmentTime(java.time.LocalTime.parse((String) time.getSelectedItem()));
             appointment.setNotes(notes.getText().trim());
-            if (controller.hasAppointmentConflict(appointment)) {
-                throw new IllegalStateException("This time slot is already booked.");
+            if (controller.hasAppointmentConflict(appointment) || !controller.updateAppointment(appointment)) {
+                throw new IllegalStateException();
             }
-            if (!controller.updateAppointment(appointment)) throw new IllegalStateException();
             loadData();
         } catch (Exception ex) {
-            String errorMessage = "This time slot is already booked. Choose another date or time.";
-            if (!(ex instanceof IllegalStateException) || !"This time slot is already booked.".equals(ex.getMessage())) {
-                errorMessage = "Enter a valid future date and time.";
-            }
-            JOptionPane.showMessageDialog(this, errorMessage,
+            JOptionPane.showMessageDialog(this, "Enter valid appointment details. The time slot may already be booked.",
                     "Update failed", JOptionPane.ERROR_MESSAGE);
         }
+    }
+
+    private <T> T findById(JComboBox<T> combo, int id) {
+        for (int index = 0; index < combo.getItemCount(); index++) {
+            T item = combo.getItemAt(index);
+            if (item instanceof Patient && ((Patient) item).getId() == id
+                    || item instanceof Dentist && ((Dentist) item).getId() == id
+                    || item instanceof Treatment && ((Treatment) item).getId() == id) return item;
+        }
+        return null;
     }
 }

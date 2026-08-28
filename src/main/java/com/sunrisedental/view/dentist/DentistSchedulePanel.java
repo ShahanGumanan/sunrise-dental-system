@@ -1,18 +1,19 @@
 package com.sunrisedental.view.dentist;
 
 import com.sunrisedental.controller.AppointmentController;
-import com.sunrisedental.model.Appointment;
 import com.sunrisedental.util.SessionManager;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
+import com.sunrisedental.model.Appointment;
 
 public class DentistSchedulePanel extends JPanel {
     private AppointmentController controller = new AppointmentController();
     private DefaultTableModel tableModel;
+    private List<Appointment> currentAppointments;
 
     public DentistSchedulePanel() {
         setLayout(new BorderLayout());
@@ -26,14 +27,39 @@ public class DentistSchedulePanel extends JPanel {
         title.setForeground(new Color(0, 102, 204));
         topPanel.add(title, BorderLayout.WEST);
 
-        JButton refreshBtn = new JButton("Refresh Today's Schedule");
-        refreshBtn.addActionListener(e -> loadSchedule());
-        topPanel.add(refreshBtn, BorderLayout.EAST);
         add(topPanel, BorderLayout.NORTH);
 
-        String[] cols = {"Appt No", "Time", "Patient", "Treatment", "Status"};
+        String[] cols = {"Date", "Time", "Patient", "Treatment", "Notes", "Action"};
         tableModel = new DefaultTableModel(cols, 0);
-        add(new JScrollPane(new JTable(tableModel)), BorderLayout.CENTER);
+        JTable table = new JTable(tableModel);
+        table.setRowHeight(28);
+        table.getColumnModel().getColumn(5).setPreferredWidth(150);
+        table.getColumnModel().getColumn(5).setCellRenderer((tableComponent, value, isSelected, hasFocus, row, column) -> {
+            JButton button = new JButton(String.valueOf(value));
+            button.setFocusPainted(false);
+            button.setEnabled(value != null && !String.valueOf(value).isBlank());
+            return button;
+        });
+        table.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent event) {
+                int row = table.rowAtPoint(event.getPoint());
+                int column = table.columnAtPoint(event.getPoint());
+                if (row < 0 || column != 5 || !"Confirm / Cancel".equals(tableModel.getValueAt(row, column))) return;
+                String[] options = {"Confirm", "Cancel", "Close"};
+                int choice = JOptionPane.showOptionDialog(table, "Choose an action for this pending appointment.",
+                        "Appointment Action", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE,
+                        null, options, options[0]);
+                int id = currentAppointments.get(row).getId();
+                if (choice == 0 && controller.confirmAppointment(id, SessionManager.getCurrentUser().getId())) {
+                    loadSchedule();
+                } else if (choice == 1 && controller.cancelAppointmentByDentist(id, SessionManager.getCurrentUser().getId())) {
+                    loadSchedule();
+                }
+            }
+
+        });
+        add(new JScrollPane(table), BorderLayout.CENTER);
 
         loadSchedule(); // Load on startup
     }
@@ -41,13 +67,23 @@ public class DentistSchedulePanel extends JPanel {
     private void loadSchedule() {
         tableModel.setRowCount(0);
         int userId = SessionManager.getCurrentUser().getId();
-        List<Appointment> list = controller.getDentistSchedule(userId, LocalDate.now());
+        currentAppointments = controller.getDentistAppointments(userId);
+        List<Appointment> list = currentAppointments;
         
         for (Appointment a : list) {
+            LocalTime endTime = a.getAppointmentTime().plusMinutes(a.getTreatment().getDurationMinutes());
             tableModel.addRow(new Object[]{
-                a.getAppointmentNumber(), a.getAppointmentTime(), a.getPatient().getName(),
-                a.getTreatment().getName(), a.getStatus()
+                a.getAppointmentDate(), a.getAppointmentTime() + " - " + endTime, a.getPatient().getName(),
+                a.getTreatment().getName(), a.getNotes() == null ? "" : a.getNotes(),
+                "pending".equals(a.getStatus()) ? "Confirm / Cancel" : statusLabel(a.getStatus())
             });
         }
+    }
+
+    private String statusLabel(String status) {
+        if ("confirmed".equals(status)) return "Confirmed";
+        if ("cancelled".equals(status)) return "Cancelled";
+        if ("completed".equals(status)) return "Completed";
+        return status;
     }
 }

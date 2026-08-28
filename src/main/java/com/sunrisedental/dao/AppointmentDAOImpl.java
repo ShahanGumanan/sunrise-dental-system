@@ -12,6 +12,16 @@ public class AppointmentDAOImpl implements AppointmentDAO {
         return DatabaseConnection.getInstance().getConnection(); 
     }
 
+    public AppointmentDAOImpl() {
+        try (Statement statement = getConnection().createStatement()) {
+            statement.executeUpdate("ALTER TABLE appointments MODIFY COLUMN status ENUM('scheduled', 'pending', 'confirmed', 'cancelled', 'completed') NOT NULL DEFAULT 'pending'");
+            statement.executeUpdate("UPDATE appointments SET status = 'pending' WHERE status = 'scheduled'");
+            statement.executeUpdate("ALTER TABLE appointments MODIFY COLUMN status ENUM('pending', 'confirmed', 'cancelled', 'completed') NOT NULL DEFAULT 'pending'");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
     @Override
     public boolean create(Appointment appt) {
         if (appt == null || appt.getPatient() == null || appt.getDentist() == null || appt.getTreatment() == null
@@ -73,6 +83,7 @@ public class AppointmentDAOImpl implements AppointmentDAO {
 
     @Override
     public Appointment findByAppointmentNumber(String number) {
+        markCompletedAppointments();
         String sql = "SELECT a.*, p.name as p_name, d_u.full_name as d_name, t.name as t_name, " +
                  "t.base_fee, t.consultation_fee, t.duration_minutes " +
                      "FROM appointments a " +
@@ -127,12 +138,15 @@ public class AppointmentDAOImpl implements AppointmentDAO {
         if (appt.getDentist() == null || appt.getTreatment() == null) return false;
         if (existsActiveAppointment(appt.getDentist().getId(), appt.getAppointmentDate(), appt.getAppointmentTime(),
             appt.getTreatment().getDurationMinutes(), appt.getId())) return false;
-        String sql = "UPDATE appointments SET appointment_date = ?, appointment_time = ?, notes = ? WHERE id = ? AND status = 'scheduled'";
+        String sql = "UPDATE appointments SET patient_id = ?, dentist_id = ?, treatment_id = ?, appointment_date = ?, appointment_time = ?, notes = ? WHERE id = ? AND status = 'pending'";
         try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
-            ps.setDate(1, Date.valueOf(appt.getAppointmentDate()));
-            ps.setTime(2, Time.valueOf(appt.getAppointmentTime()));
-            ps.setString(3, appt.getNotes());
-            ps.setInt(4, appt.getId());
+            ps.setInt(1, appt.getPatient().getId());
+            ps.setInt(2, appt.getDentist().getId());
+            ps.setInt(3, appt.getTreatment().getId());
+            ps.setDate(4, Date.valueOf(appt.getAppointmentDate()));
+            ps.setTime(5, Time.valueOf(appt.getAppointmentTime()));
+            ps.setString(6, appt.getNotes());
+            ps.setInt(7, appt.getId());
             return ps.executeUpdate() == 1;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -142,8 +156,10 @@ public class AppointmentDAOImpl implements AppointmentDAO {
 
     @Override
     public List<Appointment> findByDate(java.time.LocalDate date) {
+        markCompletedAppointments();
         List<Appointment> list = new ArrayList<>();
-        String sql = "SELECT a.*, p.name as p_name, d_u.full_name as d_name, t.name as t_name, t.duration_minutes " +
+        String sql = "SELECT a.*, p.name as p_name, d_u.full_name as d_name, t.name as t_name, "
+            + "t.base_fee, t.consultation_fee, t.duration_minutes " +
                      "FROM appointments a " +
                      "JOIN patients p ON a.patient_id = p.id " +
                      "JOIN dentists d ON a.dentist_id = d.id " +
@@ -184,8 +200,10 @@ public class AppointmentDAOImpl implements AppointmentDAO {
 
     @Override
     public List<Appointment> findAll() {
+        markCompletedAppointments();
         List<Appointment> list = new ArrayList<>();
-        String sql = "SELECT a.*, p.name as p_name, d_u.full_name as d_name, t.name as t_name, t.duration_minutes " +
+        String sql = "SELECT a.*, p.name as p_name, d_u.full_name as d_name, t.name as t_name, "
+            + "t.base_fee, t.consultation_fee, t.duration_minutes " +
                      "FROM appointments a " +
                      "JOIN patients p ON a.patient_id = p.id " +
                      "JOIN dentists d ON a.dentist_id = d.id " +
@@ -204,8 +222,10 @@ public class AppointmentDAOImpl implements AppointmentDAO {
 
     @Override
     public List<Appointment> findByDentistUserId(int userId) {
+        markCompletedAppointments();
         List<Appointment> list = new ArrayList<>();
-        String sql = "SELECT a.*, p.name as p_name, d_u.full_name as d_name, t.name as t_name, t.duration_minutes "
+        String sql = "SELECT a.*, p.name as p_name, d_u.full_name as d_name, t.name as t_name, "
+            + "t.base_fee, t.consultation_fee, t.duration_minutes "
                 + "FROM appointments a JOIN patients p ON a.patient_id = p.id "
                 + "JOIN dentists d ON a.dentist_id = d.id JOIN users d_u ON d.user_id = d_u.id "
                 + "JOIN treatments t ON a.treatment_id = t.id WHERE d.user_id = ? "
@@ -235,9 +255,39 @@ public class AppointmentDAOImpl implements AppointmentDAO {
     }
 
     @Override
+    public boolean updateStatusForDentist(int id, String status, int dentistUserId) {
+        String sql = "UPDATE appointments a JOIN dentists d ON a.dentist_id = d.id "
+                + "SET a.status = ? WHERE a.id = ? AND d.user_id = ? AND a.status = 'pending'";
+        try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
+            ps.setString(1, status);
+            ps.setInt(2, id);
+            ps.setInt(3, dentistUserId);
+            return ps.executeUpdate() == 1;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    @Override
+    public void markCompletedAppointments() {
+        String sql = "UPDATE appointments a JOIN treatments t ON a.treatment_id = t.id "
+                + "SET a.status = 'completed' WHERE a.status = 'confirmed' "
+                + "AND DATE_ADD(TIMESTAMP(a.appointment_date, a.appointment_time), "
+                + "INTERVAL COALESCE(t.duration_minutes, 30) MINUTE) <= NOW()";
+        try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
     public List<Appointment> findByDentistUserIdAndDate(int userId, java.time.LocalDate date) {
+        markCompletedAppointments();
         List<Appointment> list = new ArrayList<>();
-        String sql = "SELECT a.*, p.name as p_name, d_u.full_name as d_name, t.name as t_name, t.duration_minutes " +
+        String sql = "SELECT a.*, p.name as p_name, d_u.full_name as d_name, t.name as t_name, "
+            + "t.base_fee, t.consultation_fee, t.duration_minutes " +
                      "FROM appointments a " +
                      "JOIN patients p ON a.patient_id = p.id " +
                      "JOIN dentists d ON a.dentist_id = d.id " +
@@ -280,6 +330,8 @@ public class AppointmentDAOImpl implements AppointmentDAO {
         com.sunrisedental.model.Treatment treatment = new com.sunrisedental.model.Treatment();
         treatment.setId(rs.getInt("treatment_id"));
         treatment.setName(rs.getString("t_name"));
+        treatment.setBaseFee(rs.getDouble("base_fee"));
+        treatment.setConsultationFee(rs.getDouble("consultation_fee"));
         treatment.setDurationMinutes(rs.getInt("duration_minutes"));
         appt.setTreatment(treatment);
         return appt;

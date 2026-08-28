@@ -24,6 +24,7 @@ public class MainFrame extends JFrame {
     private JPanel contentPanel;
     private CardLayout contentCardLayout;
     private JPanel sidebarPanel;
+    private BillFormPanel billFormPanel;
 
     public MainFrame() {
         setTitle("Sunrise Dental Clinic System");
@@ -84,11 +85,15 @@ public class MainFrame extends JFrame {
         patientTabs.addTab("Register Patient", new PatientFormPanel());
         patientTabs.addTab("View All Patients", new PatientListPanel());
         contentPanel.add(patientTabs, "PATIENTS");
-        contentPanel.add(new BillFormPanel(), "BILLING");
+        billFormPanel = new BillFormPanel();
+        contentPanel.add(billFormPanel, "BILLING");
         contentPanel.add(new UserManagementPanel(), "USERS");
         contentPanel.add(new DentistSchedulePanel(), "SCHEDULE");
         contentPanel.add(new RevenueReportPanel(), "REVENUE_REPORT");
-        contentPanel.add(new AppointmentDirectoryPanel(), "APPOINTMENT_LIST");
+        contentPanel.add(new AppointmentDirectoryPanel(false, appointment -> {
+            billFormPanel.loadAppointment(appointment);
+            contentCardLayout.show(contentPanel, "BILLING");
+        }), "APPOINTMENT_LIST");
         contentPanel.add(new HelpPanel(), "HELP");
         contentPanel.add(new TreatmentManagementPanel(), "TREATMENTS");
 
@@ -110,8 +115,6 @@ public class MainFrame extends JFrame {
         
         if (SessionManager.hasRole("dentist")) {
             addNavButton("My Schedule", "SCHEDULE");
-            contentPanel.add(new AppointmentDirectoryPanel(true), "DENTIST_APPOINTMENTS");
-            addNavButton("Appointments", "DENTIST_APPOINTMENTS");
         }
 
         addNavButton("System Help", "HELP");
