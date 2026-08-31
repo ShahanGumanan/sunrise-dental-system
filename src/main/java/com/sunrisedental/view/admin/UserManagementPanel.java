@@ -1,9 +1,7 @@
 package com.sunrisedental.view.admin;
 
-import com.sunrisedental.dao.DentistDAO;
-import com.sunrisedental.dao.DentistDAOImpl;
-import com.sunrisedental.dao.UserDAOImpl;
 import com.sunrisedental.model.User;
+import com.sunrisedental.util.AdminApiClient;
 import com.sunrisedental.util.PasswordUtil;
 import com.sunrisedental.util.SessionManager;
 
@@ -13,14 +11,10 @@ import java.awt.*;
 import java.util.List;
 
 public class UserManagementPanel extends JPanel {
-    private UserDAOImpl userDAO;
-    private DentistDAO dentistDAO;
     private JTable table;
     private DefaultTableModel tableModel;
 
     public UserManagementPanel() {
-        userDAO = new UserDAOImpl();
-        dentistDAO = new DentistDAOImpl();
         setLayout(new BorderLayout(10, 10));
         setBackground(Color.WHITE);
         setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
@@ -63,7 +57,7 @@ public class UserManagementPanel extends JPanel {
                     return;
                 }
                 boolean activate = "Activate".equals(tableModel.getValueAt(row, 5));
-                if (userDAO.updateStatus(userId, activate, SessionManager.getCurrentUser().getId())) loadUsers();
+                if (AdminApiClient.updateUserStatus(userId, activate, SessionManager.getCurrentUser().getId())) loadUsers();
             }
         });
         add(new JScrollPane(table), BorderLayout.CENTER);
@@ -73,11 +67,8 @@ public class UserManagementPanel extends JPanel {
 
     private void loadUsers() {
         tableModel.setRowCount(0);
-        List<User> users = userDAO.findAll();
+        List<User> users = AdminApiClient.users();
         for (User u : users) {
-            if ("dentist".equalsIgnoreCase(u.getRole()) && u.isActive()) {
-                dentistDAO.ensureProfileForUser(u.getId());
-            }
                 tableModel.addRow(new Object[]{u.getId(), u.getUsername(), u.getFullName(), u.getRole(),
                     u.isActive() ? "Active" : "Inactive",
                     u.getId() == SessionManager.getCurrentUser().getId() ? "--" : (u.isActive() ? "Deactivate" : "Activate")});
@@ -111,11 +102,7 @@ public class UserManagementPanel extends JPanel {
             String role = roleCombo.getSelectedItem().toString();
             u.setRole(role);
             
-            if (userDAO.create(u)) {
-                if (role.equals("dentist") && !dentistDAO.ensureProfileForUser(u.getId())) {
-                    JOptionPane.showMessageDialog(this, "User was created, but the dentist profile could not be linked.",
-                            "Dentist profile warning", JOptionPane.WARNING_MESSAGE);
-                }
+            if (AdminApiClient.createUser(u)) {
                 JOptionPane.showMessageDialog(this, "Staff added successfully!");
                 loadUsers();
             } else {

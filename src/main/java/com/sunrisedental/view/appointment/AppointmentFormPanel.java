@@ -1,9 +1,9 @@
 package com.sunrisedental.view.appointment;
 
 import com.sunrisedental.controller.AppointmentController;
-import com.sunrisedental.dao.*;
 import com.sunrisedental.model.*;
 import com.sunrisedental.util.NumberGenerator;
+import com.sunrisedental.util.ReferenceDataClient;
 import com.sunrisedental.util.ValidationUtil;
 import com.toedter.calendar.JDateChooser;
 
@@ -113,9 +113,9 @@ public class AppointmentFormPanel extends JPanel {
         dentistCombo.removeAllItems();
         treatmentCombo.removeAllItems();
 
-        for (Patient p : new PatientDAOImpl().findAll()) { patientCombo.addItem(p); }
-        for (Dentist d : new DentistDAOImpl().findAll()) { dentistCombo.addItem(d); }
-        for (Treatment t : new TreatmentDAOImpl().findAll()) { treatmentCombo.addItem(t); }
+        for (Patient p : ReferenceDataClient.patients()) { patientCombo.addItem(p); }
+        for (Dentist d : ReferenceDataClient.dentists()) { dentistCombo.addItem(d); }
+        for (Treatment t : ReferenceDataClient.treatments()) { treatmentCombo.addItem(t); }
         patientCombo.setSelectedItem(null);
         dentistCombo.setSelectedItem(null);
         treatmentCombo.setSelectedItem(null);

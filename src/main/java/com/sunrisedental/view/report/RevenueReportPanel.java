@@ -55,24 +55,45 @@ public class RevenueReportPanel extends JPanel {
     }
 
     private void loadReport() {
-        tableModel.setRowCount(0);
-        double totalSum = 0;
-        try {
-            if (startField.getDate() == null || endField.getDate() == null) throw new IllegalArgumentException();
-            LocalDate start = startField.getDate().toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate();
-            LocalDate end = endField.getDate().toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate();
-            List<Bill> list = controller.getRevenueReport(start, end);
-            
-            for (Bill b : list) {
-                tableModel.addRow(new Object[]{
-                    b.getReceiptNumber(), b.getAppointment().getPatient().getName(),
-                    b.getAppointment().getTreatment().getName(), b.getBillType(), b.getTotal()
-                });
-                totalSum += b.getTotal();
-            }
-            totalRevenueLbl.setText(String.format("Total Revenue: Rs. %.2f", totalSum));
-        } catch (Exception ex) {
+        if (startField.getDate() == null || endField.getDate() == null) {
             JOptionPane.showMessageDialog(this, "Invalid Date Format!", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
         }
+
+        final LocalDate start = startField.getDate().toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate();
+        final LocalDate end = endField.getDate().toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate();
+        setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+
+        new SwingWorker<List<Bill>, Void>() {
+            @Override
+            protected List<Bill> doInBackground() {
+                return controller.getRevenueReport(start, end);
+            }
+
+            @Override
+            protected void done() {
+                tableModel.setRowCount(0);
+                double totalSum = 0;
+                try {
+                    List<Bill> list = get();
+                    for (Bill b : list) {
+                        tableModel.addRow(new Object[]{
+                            b.getReceiptNumber(), b.getAppointment().getPatient().getName(),
+                            b.getAppointment().getTreatment().getName(), b.getBillType(), b.getTotal()
+                        });
+                        totalSum += b.getTotal();
+                    }
+                    totalRevenueLbl.setText(String.format("Total Revenue: Rs. %.2f", totalSum));
+                } catch (Exception ex) {
+                    totalRevenueLbl.setText("Total Revenue: Rs. 0.00");
+                    JOptionPane.showMessageDialog(RevenueReportPanel.this,
+                            "Unable to load revenue report. The server may be down or unreachable.",
+                            "Error",
+                            JOptionPane.ERROR_MESSAGE);
+                } finally {
+                    setCursor(Cursor.getDefaultCursor());
+                }
+            }
+        }.execute();
     }
 }

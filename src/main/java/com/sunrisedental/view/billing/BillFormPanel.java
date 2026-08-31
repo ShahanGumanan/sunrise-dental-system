@@ -93,8 +93,7 @@ public class BillFormPanel extends JPanel {
         // --- Action Listeners ---
         searchBtn.addActionListener(e -> {
             String apptNo = searchField.getText().trim();
-            // Since we didn't add findByApptNo to ApptController yet, we call DAO directly for brevity
-            currentAppt = new com.sunrisedental.dao.AppointmentDAOImpl().findByAppointmentNumber(apptNo);
+            currentAppt = apptController.searchByNumber(apptNo);
             if (currentAppt != null) {
                 loadAppointment(currentAppt);
             } else {
@@ -103,16 +102,48 @@ public class BillFormPanel extends JPanel {
         });
 
         calcBtn.addActionListener(e -> {
-            if (currentAppt == null) return;
+            if (currentAppt == null) {
+                JOptionPane.showMessageDialog(this, "Appointment not found.");
+                return;
+            }
+            String status = currentAppt.getStatus() == null ? "" : currentAppt.getStatus();
+            if ("cancelled".equalsIgnoreCase(status)) {
+                totalLbl.setText("Cancelled");
+                generateBtn.setEnabled(false);
+                JOptionPane.showMessageDialog(this, "This appointment was cancelled.");
+                return;
+            }
+            if ("pending".equalsIgnoreCase(status)) {
+                totalLbl.setText("Pending");
+                generateBtn.setEnabled(false);
+                JOptionPane.showMessageDialog(this, "The dentist has not confirmed or cancelled this appointment yet.");
+                return;
+            }
             String type = stdRadio.isSelected() ? "standard" : (emgRadio.isSelected() ? "emergency" : "child");
-            // Dummy calculate just for UI display
             com.sunrisedental.pattern.strategy.FeeCalculator calc = com.sunrisedental.pattern.factory.BillFactory.getCalculator(type);
             double total = calc.calculateTreatmentFee(currentAppt.getTreatment().getBaseFee()) + currentAppt.getTreatment().getConsultationFee();
             totalLbl.setText("Rs. " + total);
-            generateBtn.setEnabled(true);
+            generateBtn.setEnabled(("confirmed".equalsIgnoreCase(status) || "completed".equalsIgnoreCase(status)) && savedBill == null);
         });
 
         generateBtn.addActionListener(e -> {
+            if (currentAppt == null) {
+                JOptionPane.showMessageDialog(this, "Appointment not found.");
+                return;
+            }
+            String status = currentAppt.getStatus() == null ? "" : currentAppt.getStatus();
+            if ("cancelled".equalsIgnoreCase(status)) {
+                totalLbl.setText("Cancelled");
+                generateBtn.setEnabled(false);
+                JOptionPane.showMessageDialog(this, "This appointment was cancelled.");
+                return;
+            }
+            if ("pending".equalsIgnoreCase(status)) {
+                totalLbl.setText("Pending");
+                generateBtn.setEnabled(false);
+                JOptionPane.showMessageDialog(this, "The dentist has not confirmed or cancelled this appointment yet.");
+                return;
+            }
             String type = stdRadio.isSelected() ? "standard" : (emgRadio.isSelected() ? "emergency" : "child");
             Bill bill = billController.generateBill(currentAppt, type);
             if (bill != null) {
@@ -126,6 +157,8 @@ public class BillFormPanel extends JPanel {
                     savedBill = existingBill;
                     viewBillBtn.setEnabled(true);
                     showReceipt(existingBill);
+                } else {
+                    JOptionPane.showMessageDialog(this, "The dentist has not confirmed or cancelled this appointment yet.");
                 }
             }
         });
@@ -148,18 +181,59 @@ public class BillFormPanel extends JPanel {
         descriptionLbl.setText(appointment.getTreatment().getDescription() == null ? "" : appointment.getTreatment().getDescription());
         durationLbl.setText(appointment.getTreatment().getDurationMinutes() + " minutes");
         baseFeeLbl.setText("Rs. " + appointment.getTreatment().getBaseFee());
-        calculateTotal();
-        generateBtn.setEnabled("confirmed".equalsIgnoreCase(appointment.getStatus()) && savedBill == null);
-        viewBillBtn.setEnabled(savedBill != null);
+
+        String status = appointment.getStatus() == null ? "" : appointment.getStatus();
+        if ("cancelled".equalsIgnoreCase(status)) {
+            totalLbl.setText("Cancelled");
+            generateBtn.setEnabled(false);
+            viewBillBtn.setEnabled(false);
+            JOptionPane.showMessageDialog(this, "This appointment was cancelled.");
+            return;
+        }
+        if ("pending".equalsIgnoreCase(status)) {
+            totalLbl.setText("Pending");
+            generateBtn.setEnabled(false);
+            viewBillBtn.setEnabled(savedBill != null);
+            JOptionPane.showMessageDialog(this, "The dentist has not confirmed or cancelled this appointment yet.");
+            return;
         }
 
-    private void refreshTotal() {
         calculateTotal();
-        generateBtn.setEnabled(currentAppt != null && "confirmed".equalsIgnoreCase(currentAppt.getStatus()));
+        generateBtn.setEnabled(("confirmed".equalsIgnoreCase(status) || "completed".equalsIgnoreCase(status)) && savedBill == null);
+        viewBillBtn.setEnabled(savedBill != null);
     }
 
-        private void calculateTotal() {
+    private void refreshTotal() {
         if (currentAppt == null) return;
+        String status = currentAppt.getStatus() == null ? "" : currentAppt.getStatus();
+        if ("cancelled".equalsIgnoreCase(status)) {
+            totalLbl.setText("Cancelled");
+            generateBtn.setEnabled(false);
+            return;
+        }
+        if ("pending".equalsIgnoreCase(status)) {
+            totalLbl.setText("Pending");
+            generateBtn.setEnabled(false);
+            return;
+        }
+        calculateTotal();
+        generateBtn.setEnabled(("confirmed".equalsIgnoreCase(status) || "completed".equalsIgnoreCase(status)) && savedBill == null);
+    }
+
+    private void calculateTotal() {
+        if (currentAppt == null) {
+            totalLbl.setText("-");
+            return;
+        }
+        String status = currentAppt.getStatus() == null ? "" : currentAppt.getStatus();
+        if ("cancelled".equalsIgnoreCase(status)) {
+            totalLbl.setText("Cancelled");
+            return;
+        }
+        if ("pending".equalsIgnoreCase(status)) {
+            totalLbl.setText("Pending");
+            return;
+        }
         String type = stdRadio.isSelected() ? "standard" : (emgRadio.isSelected() ? "emergency" : "child");
         com.sunrisedental.pattern.strategy.FeeCalculator calculator =
             com.sunrisedental.pattern.factory.BillFactory.getCalculator(type);

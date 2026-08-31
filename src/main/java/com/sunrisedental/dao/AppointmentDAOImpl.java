@@ -85,7 +85,7 @@ public class AppointmentDAOImpl implements AppointmentDAO {
     public Appointment findByAppointmentNumber(String number) {
         markCompletedAppointments();
         String sql = "SELECT a.*, p.name as p_name, d_u.full_name as d_name, t.name as t_name, " +
-                 "t.base_fee, t.consultation_fee, t.duration_minutes " +
+                 "t.base_fee, t.consultation_fee, t.duration_minutes, t.description as treatment_description " +
                      "FROM appointments a " +
                      "JOIN patients p ON a.patient_id = p.id " +
                  "JOIN dentists d ON a.dentist_id = d.id " +
@@ -116,6 +116,7 @@ public class AppointmentDAOImpl implements AppointmentDAO {
                     treatment.setBaseFee(rs.getDouble("base_fee"));
                     treatment.setConsultationFee(rs.getDouble("consultation_fee"));
                     treatment.setDurationMinutes(rs.getInt("duration_minutes"));
+                    treatment.setDescription(rs.getString("treatment_description"));
                     appt.setTreatment(treatment);
 
                     com.sunrisedental.model.Dentist dentist = new com.sunrisedental.model.Dentist();
@@ -159,7 +160,7 @@ public class AppointmentDAOImpl implements AppointmentDAO {
         markCompletedAppointments();
         List<Appointment> list = new ArrayList<>();
         String sql = "SELECT a.*, p.name as p_name, d_u.full_name as d_name, t.name as t_name, "
-            + "t.base_fee, t.consultation_fee, t.duration_minutes " +
+            + "t.base_fee, t.consultation_fee, t.duration_minutes, t.description as treatment_description " +
                      "FROM appointments a " +
                      "JOIN patients p ON a.patient_id = p.id " +
                      "JOIN dentists d ON a.dentist_id = d.id " +
@@ -203,7 +204,7 @@ public class AppointmentDAOImpl implements AppointmentDAO {
         markCompletedAppointments();
         List<Appointment> list = new ArrayList<>();
         String sql = "SELECT a.*, p.name as p_name, d_u.full_name as d_name, t.name as t_name, "
-            + "t.base_fee, t.consultation_fee, t.duration_minutes " +
+            + "t.base_fee, t.consultation_fee, t.duration_minutes, t.description as treatment_description " +
                      "FROM appointments a " +
                      "JOIN patients p ON a.patient_id = p.id " +
                      "JOIN dentists d ON a.dentist_id = d.id " +
@@ -225,7 +226,7 @@ public class AppointmentDAOImpl implements AppointmentDAO {
         markCompletedAppointments();
         List<Appointment> list = new ArrayList<>();
         String sql = "SELECT a.*, p.name as p_name, d_u.full_name as d_name, t.name as t_name, "
-            + "t.base_fee, t.consultation_fee, t.duration_minutes "
+            + "t.base_fee, t.consultation_fee, t.duration_minutes, t.description as treatment_description "
                 + "FROM appointments a JOIN patients p ON a.patient_id = p.id "
                 + "JOIN dentists d ON a.dentist_id = d.id JOIN users d_u ON d.user_id = d_u.id "
                 + "JOIN treatments t ON a.treatment_id = t.id WHERE d.user_id = ? "
@@ -287,7 +288,7 @@ public class AppointmentDAOImpl implements AppointmentDAO {
         markCompletedAppointments();
         List<Appointment> list = new ArrayList<>();
         String sql = "SELECT a.*, p.name as p_name, d_u.full_name as d_name, t.name as t_name, "
-            + "t.base_fee, t.consultation_fee, t.duration_minutes " +
+            + "t.base_fee, t.consultation_fee, t.duration_minutes, t.description as treatment_description " +
                      "FROM appointments a " +
                      "JOIN patients p ON a.patient_id = p.id " +
                      "JOIN dentists d ON a.dentist_id = d.id " +
@@ -333,6 +334,7 @@ public class AppointmentDAOImpl implements AppointmentDAO {
         treatment.setBaseFee(rs.getDouble("base_fee"));
         treatment.setConsultationFee(rs.getDouble("consultation_fee"));
         treatment.setDurationMinutes(rs.getInt("duration_minutes"));
+        treatment.setDescription(rs.getString("treatment_description"));
         appt.setTreatment(treatment);
         return appt;
     }

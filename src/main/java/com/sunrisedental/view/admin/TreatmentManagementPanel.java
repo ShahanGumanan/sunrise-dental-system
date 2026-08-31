@@ -1,14 +1,12 @@
 package com.sunrisedental.view.admin;
 
-import com.sunrisedental.dao.TreatmentDAO;
-import com.sunrisedental.dao.TreatmentDAOImpl;
 import com.sunrisedental.model.Treatment;
+import com.sunrisedental.util.AdminApiClient;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 
 public class TreatmentManagementPanel extends JPanel {
-    private final TreatmentDAO treatmentDAO = new TreatmentDAOImpl();
     private DefaultTableModel tableModel;
 
     public TreatmentManagementPanel() {
@@ -34,7 +32,7 @@ public class TreatmentManagementPanel extends JPanel {
 
     private void loadTreatments() {
         tableModel.setRowCount(0);
-        for (Treatment treatment : treatmentDAO.findAll()) {
+        for (Treatment treatment : AdminApiClient.treatments()) {
             tableModel.addRow(new Object[]{treatment.getId(), treatment.getName(), treatment.getBaseFee(),
                     treatment.getConsultationFee(), treatment.getDurationMinutes(), treatment.getDescription()});
         }
@@ -67,7 +65,7 @@ public class TreatmentManagementPanel extends JPanel {
                 treatment.setConsultationFee(consultationFee);
                 treatment.setDurationMinutes(durationMinutes);
                 treatment.setDescription(descriptionF.getText().trim());
-                if (!treatmentDAO.create(treatment)) throw new IllegalStateException();
+                if (!AdminApiClient.createTreatment(treatment)) throw new IllegalStateException();
                 loadTreatments();
                 JOptionPane.showMessageDialog(this, "Treatment Added!");
             } catch (Exception ex) {

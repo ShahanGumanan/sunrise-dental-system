@@ -1,6 +1,6 @@
 # Sunrise Dental System
 
-Java Swing desktop application for dental appointment, patient, treatment, billing, and staff management.
+Distributed Java Swing client and HTTP web service for dental appointment, patient, treatment, billing, and staff management.
 
 ## Technology
 
@@ -8,6 +8,7 @@ Java Swing desktop application for dental appointment, patient, treatment, billi
 - Maven
 - Java Swing
 - MySQL 8 via JDBC
+- JDK HttpServer REST-style web services with Gson JSON
 - JUnit 5 and Mockito
 - MVC, DAO, Singleton, Factory, and Strategy patterns
 
@@ -24,7 +25,18 @@ The seeded demo password is `password` for the `admin`, `receptionist`, and `den
 
 ## Architecture
 
-Swing views send user actions to controllers. Controllers validate input and coordinate DAO operations. DAOs contain prepared SQL and map database rows to model objects. Fee calculation uses the Strategy pattern selected by the Bill Factory.
+The system runs as two processes. `DentalServer` owns the database and DAO layer and exposes JSON HTTP endpoints on port 8080. The Swing/JFrame client sends requests through `ApiClient`; its controllers validate requests and act as network proxies. Fee calculation uses the Strategy pattern selected by the Bill Factory.
+
+## Running the distributed system
+
+Start MySQL and create/seed the database, then use two terminals from the project root:
+
+```text
+mvn exec:java "-Dexec.mainClass=com.sunrisedental.server.DentalServer"
+mvn exec:java "-Dexec.mainClass=com.sunrisedental.Main"
+```
+
+The server must be running before the client logs in. The server endpoint is `http://localhost:8080/api`.
 
 ## Roles
 

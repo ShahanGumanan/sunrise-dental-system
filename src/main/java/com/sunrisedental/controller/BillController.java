@@ -7,22 +7,33 @@ import com.sunrisedental.model.Bill;
 import com.sunrisedental.pattern.factory.BillFactory;
 import com.sunrisedental.pattern.strategy.FeeCalculator;
 import com.sunrisedental.util.NumberGenerator; 
+import com.sunrisedental.util.ApiClient;
+import com.sunrisedental.util.JsonUtil;
+import java.util.Map;
 
 public class BillController {
     private BillDAO billDAO;
+    private final boolean remote;
 
     public BillController() {
-        this.billDAO = new BillDAOImpl();
+        this(new BillDAOImpl());
     }
 
     public BillController(BillDAO billDAO) {
         this.billDAO = billDAO;
+        this.remote = false;
     }
 
     public Bill generateBill(Appointment appt, String billType) {
-        if (appt == null || appt.getTreatment() == null || appt.getId() <= 0 || !"confirmed".equals(appt.getStatus())
+        if (remote) {
+            if (appt == null || billType == null || billType.isBlank()) return null;
+            try { return JsonUtil.fromJson(ApiClient.post("/bills", Map.of("appointment", appt, "billType", billType)), Bill.class); }
+            catch (Exception ignored) { return null; }
+        }
+        if (appt == null || appt.getTreatment() == null || appt.getId() <= 0
+            || !("confirmed".equalsIgnoreCase(appt.getStatus()) || "completed".equalsIgnoreCase(appt.getStatus()))
             || billType == null || billType.isBlank()
-                || billDAO.existsForAppointment(appt.getId())) {
+            || billDAO.existsForAppointment(appt.getId())) {
             return null;
         }
         // Use Factory to get the correct Strategy
@@ -55,6 +66,10 @@ public class BillController {
     }
 
     public Bill findByAppointmentId(int appointmentId) {
+        if (remote) {
+            try { return JsonUtil.fromJson(ApiClient.get("/bills?appointmentId=" + appointmentId), Bill.class); }
+            catch (Exception ignored) { return null; }
+        }
         return billDAO.findByAppointmentId(appointmentId);
     }
 }

@@ -1,14 +1,12 @@
 package com.sunrisedental.view.appointment;
 
 import com.sunrisedental.controller.AppointmentController;
-import com.sunrisedental.dao.DentistDAOImpl;
-import com.sunrisedental.dao.PatientDAOImpl;
-import com.sunrisedental.dao.TreatmentDAOImpl;
 import com.sunrisedental.model.Appointment;
 import com.sunrisedental.model.Dentist;
 import com.sunrisedental.model.Patient;
 import com.sunrisedental.model.Treatment;
 import com.sunrisedental.util.SessionManager;
+import com.sunrisedental.util.ReferenceDataClient;
 import com.toedter.calendar.JDateChooser;
 
 import javax.swing.*;
@@ -218,9 +216,9 @@ public class AppointmentDirectoryPanel extends JPanel {
     }
 
     private void editAppointment(Appointment appointment) {
-        JComboBox<Patient> patient = new JComboBox<>(new PatientDAOImpl().findAll().toArray(new Patient[0]));
-        JComboBox<Dentist> dentist = new JComboBox<>(new DentistDAOImpl().findAll().toArray(new Dentist[0]));
-        JComboBox<Treatment> treatment = new JComboBox<>(new TreatmentDAOImpl().findAll().toArray(new Treatment[0]));
+        JComboBox<Patient> patient = new JComboBox<>(ReferenceDataClient.patients().toArray(new Patient[0]));
+        JComboBox<Dentist> dentist = new JComboBox<>(ReferenceDataClient.dentists().toArray(new Dentist[0]));
+        JComboBox<Treatment> treatment = new JComboBox<>(ReferenceDataClient.treatments().toArray(new Treatment[0]));
         patient.setSelectedItem(findById(patient, appointment.getPatient().getId()));
         dentist.setSelectedItem(findById(dentist, appointment.getDentist().getId()));
         treatment.setSelectedItem(findById(treatment, appointment.getTreatment().getId()));
