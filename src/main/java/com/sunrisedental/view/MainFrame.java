@@ -25,6 +25,7 @@ public class MainFrame extends JFrame {
     private CardLayout contentCardLayout;
     private JPanel sidebarPanel;
     private BillFormPanel billFormPanel;
+    private DashboardPanel dashboardPanel;
 
     public MainFrame() {
         setTitle("Sunrise Dental Clinic System");
@@ -78,7 +79,8 @@ public class MainFrame extends JFrame {
         // Content Area (For switching between Dashboard, Appointments, etc.)
         contentCardLayout = new CardLayout();
         contentPanel = new JPanel(contentCardLayout);
-        contentPanel.add(new DashboardPanel(), "DASHBOARD");
+        dashboardPanel = new DashboardPanel();
+        contentPanel.add(dashboardPanel, "DASHBOARD");
         contentPanel.add(new AppointmentFormPanel(), "NEW_APPOINTMENT");
 
         JTabbedPane patientTabs = new JTabbedPane();
@@ -129,7 +131,12 @@ public class MainFrame extends JFrame {
     private void addNavButton(String title, String cardName) {
         JButton btn = new JButton(title);
         btn.setFocusPainted(false);
-        btn.addActionListener(e -> contentCardLayout.show(contentPanel, cardName));
+        btn.addActionListener(e -> {
+            if ("DASHBOARD".equals(cardName) && dashboardPanel != null) {
+                dashboardPanel.refresh();
+            }
+            contentCardLayout.show(contentPanel, cardName);
+        });
         sidebarPanel.add(btn);
     }
 }
