@@ -9,6 +9,7 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.List;
+import com.sunrisedental.view.UiTheme;
 
 public class UserManagementPanel extends JPanel {
     private JTable table;
@@ -16,19 +17,18 @@ public class UserManagementPanel extends JPanel {
 
     public UserManagementPanel() {
         setLayout(new BorderLayout(10, 10));
-        setBackground(Color.WHITE);
+        setBackground(UiTheme.CANVAS);
         setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
         // Top Panel
         JPanel topPanel = new JPanel(new BorderLayout());
-        topPanel.setBackground(Color.WHITE);
+        topPanel.setBackground(UiTheme.CANVAS);
         JLabel title = new JLabel("Staff Management (Admin Only)");
-        title.setFont(new Font("Arial", Font.BOLD, 22));
+        UiTheme.styleTitle(title);
         topPanel.add(title, BorderLayout.WEST);
 
         JButton addBtn = new JButton("+ Add New Staff");
-        addBtn.setBackground(new Color(0, 102, 204));
-        addBtn.setForeground(Color.WHITE);
+        UiTheme.stylePrimaryButton(addBtn);
         addBtn.addActionListener(e -> showAddUserDialog());
         topPanel.add(addBtn, BorderLayout.EAST);
 
@@ -38,10 +38,11 @@ public class UserManagementPanel extends JPanel {
         String[] columns = {"ID", "Username", "Full Name", "Role", "Status", "Action"};
         tableModel = new DefaultTableModel(columns, 0);
         table = new JTable(tableModel);
+        UiTheme.styleTable(table);
         table.getColumnModel().getColumn(5).setPreferredWidth(130);
         table.getColumnModel().getColumn(5).setCellRenderer((tableComponent, value, selected, focused, row, column) -> {
             JButton button = new JButton(String.valueOf(value));
-            button.setFocusPainted(false);
+            UiTheme.styleButton(button);
             button.setEnabled(!"--".equals(value));
             return button;
         });

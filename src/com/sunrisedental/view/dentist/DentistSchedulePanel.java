@@ -9,6 +9,7 @@ import java.awt.*;
 import java.time.LocalTime;
 import java.util.List;
 import com.sunrisedental.model.Appointment;
+import com.sunrisedental.view.UiTheme;
 
 public class DentistSchedulePanel extends JPanel {
     private AppointmentController controller = new AppointmentController();
@@ -17,14 +18,13 @@ public class DentistSchedulePanel extends JPanel {
 
     public DentistSchedulePanel() {
         setLayout(new BorderLayout());
-        setBackground(Color.WHITE);
+        setBackground(UiTheme.CANVAS);
         setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
         JPanel topPanel = new JPanel(new BorderLayout());
-        topPanel.setBackground(Color.WHITE);
+        topPanel.setBackground(UiTheme.CANVAS);
         JLabel title = new JLabel("My Daily Schedule - Dr. " + SessionManager.getCurrentUser().getFullName());
-        title.setFont(new Font("Arial", Font.BOLD, 22));
-        title.setForeground(new Color(0, 102, 204));
+        UiTheme.styleTitle(title);
         topPanel.add(title, BorderLayout.WEST);
 
         add(topPanel, BorderLayout.NORTH);
@@ -32,11 +32,11 @@ public class DentistSchedulePanel extends JPanel {
         String[] cols = {"Date", "Time", "Patient", "Treatment", "Notes", "Action"};
         tableModel = new DefaultTableModel(cols, 0);
         JTable table = new JTable(tableModel);
-        table.setRowHeight(28);
+        UiTheme.styleTable(table);
         table.getColumnModel().getColumn(5).setPreferredWidth(150);
         table.getColumnModel().getColumn(5).setCellRenderer((tableComponent, value, isSelected, hasFocus, row, column) -> {
             JButton button = new JButton(String.valueOf(value));
-            button.setFocusPainted(false);
+            UiTheme.styleButton(button);
             button.setEnabled(value != null && !String.valueOf(value).isBlank());
             return button;
         });

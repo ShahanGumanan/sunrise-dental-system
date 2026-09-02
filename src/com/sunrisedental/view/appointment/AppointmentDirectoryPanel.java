@@ -7,6 +7,7 @@ import com.sunrisedental.model.Patient;
 import com.sunrisedental.model.Treatment;
 import com.sunrisedental.util.SessionManager;
 import com.sunrisedental.util.ReferenceDataClient;
+import com.sunrisedental.view.UiTheme;
 import com.toedter.calendar.JDateChooser;
 
 import javax.swing.*;
@@ -40,21 +41,24 @@ public class AppointmentDirectoryPanel extends JPanel {
         this.dentistOnly = dentistOnly;
         this.billAction = billAction;
         setLayout(new BorderLayout(10, 10));
-        setBackground(Color.WHITE);
+        setBackground(UiTheme.CANVAS);
         setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
         // Top Search Panel
         JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        topPanel.setBackground(Color.WHITE);
+        topPanel.setBackground(UiTheme.CANVAS);
         topPanel.add(new JLabel("Appointments"));
         searchField = new JTextField(14);
+        UiTheme.styleField(searchField);
         searchField.setToolTipText("Search by appointment number");
         statusFilter = new JComboBox<>(new String[]{"All statuses", "pending", "confirmed", "cancelled", "completed"});
+        UiTheme.styleField(statusFilter);
         
         JButton refreshBtn = new JButton("Refresh");
+        UiTheme.styleButton(refreshBtn);
         JButton cancelBtn = new JButton("Cancel Selected Appointment");
-        cancelBtn.setBackground(Color.RED);
-        cancelBtn.setForeground(Color.WHITE);
+        UiTheme.styleButton(cancelBtn);
+        cancelBtn.setForeground(UiTheme.DANGER);
         
         topPanel.add(refreshBtn);
         topPanel.add(new JLabel("Search Appointment Number:"));
@@ -70,6 +74,7 @@ public class AppointmentDirectoryPanel extends JPanel {
             : new String[]{"ID", "Appt No", "Date", "Time", "Patient", "Dentist", "Treatment", "Status", "Notes", "Action"};
         tableModel = new DefaultTableModel(cols, 0);
         table = new JTable(tableModel);
+        UiTheme.styleTable(table);
         table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value, boolean selected,
@@ -86,7 +91,7 @@ public class AppointmentDirectoryPanel extends JPanel {
             table.getColumnModel().getColumn(9).setPreferredWidth(130);
             table.getColumnModel().getColumn(9).setCellRenderer((tableComponent, value, isSelected, hasFocus, row, column) -> {
                 JButton button = new JButton(String.valueOf(value));
-                button.setFocusPainted(false);
+                UiTheme.styleButton(button);
                 button.setEnabled(value != null && !String.valueOf(value).isBlank());
                 return button;
             });

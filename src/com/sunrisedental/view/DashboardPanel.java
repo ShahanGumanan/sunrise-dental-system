@@ -22,7 +22,7 @@ public class DashboardPanel extends JPanel {
     public void refresh() {
         removeAll();
         setLayout(new BorderLayout(16, 16));
-        setBackground(new Color(244, 247, 250));
+        setBackground(UiTheme.CANVAS);
         setBorder(BorderFactory.createEmptyBorder(18, 18, 18, 18));
 
         add(buildHeader(), BorderLayout.NORTH);
@@ -36,12 +36,11 @@ public class DashboardPanel extends JPanel {
         header.setOpaque(false);
 
         JLabel title = new JLabel("Clinic Dashboard");
-        title.setFont(new Font("Arial", Font.BOLD, 26));
-        title.setForeground(new Color(22, 38, 62));
+        UiTheme.styleTitle(title);
 
         JLabel subtitle = new JLabel("Role: " + formatRole(SessionManager.getRole()) + "  |  User: " + SessionManager.getCurrentUser().getFullName());
-        subtitle.setFont(new Font("Arial", Font.PLAIN, 14));
-        subtitle.setForeground(new Color(85, 96, 112));
+        subtitle.setFont(UiTheme.LABEL);
+        subtitle.setForeground(UiTheme.MUTED);
 
         JPanel textPanel = new JPanel(new GridLayout(2, 1));
         textPanel.setOpaque(false);
@@ -162,13 +161,14 @@ public class DashboardPanel extends JPanel {
 
     private JPanel buildTrendPanel(String title, Map<String, Integer> values) {
         JPanel panel = new JPanel(new BorderLayout(10, 10));
-        panel.setBackground(Color.WHITE);
+        panel.setBackground(UiTheme.SURFACE);
         panel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(220, 224, 230)),
+                BorderFactory.createLineBorder(UiTheme.BORDER),
                 BorderFactory.createEmptyBorder(12, 12, 12, 12)));
 
         JLabel label = new JLabel(title);
-        label.setFont(new Font("Arial", Font.BOLD, 15));
+        label.setFont(new Font("Segoe UI", Font.BOLD, 15));
+        label.setForeground(UiTheme.TEXT);
         panel.add(label, BorderLayout.NORTH);
 
         JPanel bars = new JPanel();
@@ -202,13 +202,14 @@ public class DashboardPanel extends JPanel {
 
     private JPanel buildQuickListPanel(String title, List<String> items) {
         JPanel panel = new JPanel(new BorderLayout(8, 8));
-        panel.setBackground(Color.WHITE);
+        panel.setBackground(UiTheme.SURFACE);
         panel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(220, 224, 230)),
+                BorderFactory.createLineBorder(UiTheme.BORDER),
                 BorderFactory.createEmptyBorder(12, 12, 12, 12)));
 
         JLabel label = new JLabel(title);
-        label.setFont(new Font("Arial", Font.BOLD, 15));
+        label.setFont(new Font("Segoe UI", Font.BOLD, 15));
+        label.setForeground(UiTheme.TEXT);
         panel.add(label, BorderLayout.NORTH);
 
         JPanel listPanel = new JPanel();
@@ -222,8 +223,8 @@ public class DashboardPanel extends JPanel {
         } else {
             for (String item : items) {
                 JLabel row = new JLabel("• " + item);
-                row.setFont(new Font("Arial", Font.PLAIN, 12));
-                row.setForeground(new Color(52, 64, 75));
+                row.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+                row.setForeground(UiTheme.TEXT);
                 row.setBorder(BorderFactory.createEmptyBorder(4, 0, 4, 0));
                 listPanel.add(row);
             }
@@ -240,22 +241,22 @@ public class DashboardPanel extends JPanel {
     private static class StatCard extends JPanel {
         StatCard(String title, String value, String subtitle) {
             setLayout(new BorderLayout(6, 6));
-            setBackground(Color.WHITE);
+            setBackground(UiTheme.SURFACE);
             setBorder(BorderFactory.createCompoundBorder(
-                    BorderFactory.createLineBorder(new Color(220, 224, 230)),
+                    BorderFactory.createLineBorder(UiTheme.BORDER),
                     BorderFactory.createEmptyBorder(12, 12, 12, 12)));
 
             JLabel titleLabel = new JLabel(title);
-            titleLabel.setFont(new Font("Arial", Font.PLAIN, 13));
-            titleLabel.setForeground(new Color(85, 96, 112));
+            titleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+            titleLabel.setForeground(UiTheme.MUTED);
 
             JLabel valueLabel = new JLabel(value);
-            valueLabel.setFont(new Font("Arial", Font.BOLD, 24));
-            valueLabel.setForeground(new Color(20, 51, 86));
+            valueLabel.setFont(new Font("Segoe UI", Font.BOLD, 24));
+            valueLabel.setForeground(UiTheme.ACCENT_DARK);
 
             JLabel subtitleLabel = new JLabel(subtitle);
-            subtitleLabel.setFont(new Font("Arial", Font.PLAIN, 11));
-            subtitleLabel.setForeground(new Color(97, 120, 136));
+            subtitleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+            subtitleLabel.setForeground(UiTheme.MUTED);
 
             add(titleLabel, BorderLayout.NORTH);
             add(valueLabel, BorderLayout.CENTER);

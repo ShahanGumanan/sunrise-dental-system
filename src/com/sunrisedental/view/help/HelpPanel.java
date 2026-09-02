@@ -4,28 +4,116 @@ import com.sunrisedental.util.SessionManager;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.Arrays;
+import java.util.List;
+import com.sunrisedental.view.UiTheme;
 
 public class HelpPanel extends JPanel {
     public HelpPanel() {
-        setLayout(new BorderLayout());
-        setBackground(Color.WHITE);
+        setLayout(new BorderLayout(0, 18));
+        setBackground(UiTheme.CANVAS);
         setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
         String role = SessionManager.getRole();
         String roleName = role == null ? "User" : role.substring(0, 1).toUpperCase() + role.substring(1);
-        JLabel title = new JLabel(roleName + " User Manual");
-        title.setFont(new Font("Arial", Font.BOLD, 22));
-        title.setForeground(new Color(0, 102, 204));
-        add(title, BorderLayout.NORTH);
+        List<String> sections = Arrays.asList(getManual(role).split("\\n\\n"));
 
-        JTextArea manual = new JTextArea(getManual(role));
-        manual.setEditable(false);
-        manual.setLineWrap(true);
-        manual.setWrapStyleWord(true);
-        manual.setFont(new Font("SansSerif", Font.PLAIN, 14));
-        manual.setMargin(new Insets(16, 16, 16, 16));
-        manual.setBackground(new Color(248, 250, 252));
-        add(new JScrollPane(manual), BorderLayout.CENTER);
+        JPanel heading = new JPanel(new BorderLayout(12, 4));
+        heading.setOpaque(false);
+        JLabel title = new JLabel(roleName + " Guide");
+        UiTheme.styleTitle(title);
+        heading.add(title, BorderLayout.NORTH);
+        JLabel subtitle = new JLabel("Choose a topic to see the next steps for your role.");
+        subtitle.setFont(UiTheme.LABEL);
+        subtitle.setForeground(UiTheme.MUTED);
+        heading.add(subtitle, BorderLayout.CENTER);
+        add(heading, BorderLayout.NORTH);
+
+        DefaultListModel<String> topicModel = new DefaultListModel<>();
+        for (int index = 1; index < sections.size(); index++) {
+            topicModel.addElement(topicTitle(sections.get(index)));
+        }
+
+        JList<String> topics = new JList<>(topicModel);
+        topics.setFont(UiTheme.LABEL);
+        topics.setForeground(UiTheme.TEXT);
+        topics.setBackground(UiTheme.SURFACE);
+        topics.setSelectionBackground(new Color(0xE8EBFF));
+        topics.setSelectionForeground(UiTheme.ACCENT_DARK);
+        topics.setFixedCellHeight(44);
+        topics.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+
+        JPanel topicPanel = new JPanel(new BorderLayout());
+        topicPanel.setBackground(UiTheme.SURFACE);
+        topicPanel.setBorder(UiTheme.surfaceBorder());
+        JLabel topicHeading = new JLabel("TOPICS");
+        topicHeading.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        topicHeading.setForeground(UiTheme.MUTED);
+        topicPanel.add(topicHeading, BorderLayout.NORTH);
+        topicPanel.add(new JScrollPane(topics), BorderLayout.CENTER);
+        topicPanel.setPreferredSize(new Dimension(220, 0));
+
+        JPanel detailPanel = new JPanel(new BorderLayout());
+        detailPanel.setBackground(UiTheme.SURFACE);
+        detailPanel.setBorder(UiTheme.surfaceBorder());
+        addGuideCards(detailPanel, sections);
+
+        JSplitPane guide = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, topicPanel, detailPanel);
+        guide.setBorder(null);
+        guide.setDividerSize(8);
+        guide.setResizeWeight(0.25);
+        add(guide, BorderLayout.CENTER);
+
+        topics.addListSelectionListener(event -> {
+            if (!event.getValueIsAdjusting() && topics.getSelectedIndex() >= 0) {
+                showGuideCard(detailPanel, sections.get(topics.getSelectedIndex() + 1), topics.getSelectedIndex() + 1);
+            }
+        });
+        if (!topicModel.isEmpty()) topics.setSelectedIndex(0);
+    }
+
+    private void addGuideCards(JPanel detailPanel, List<String> sections) {
+        if (sections.size() > 1) {
+            showGuideCard(detailPanel, sections.get(1), 1);
+        }
+    }
+
+    private void showGuideCard(JPanel detailPanel, String section, int number) {
+        detailPanel.removeAll();
+        String[] lines = section.split("\\n", 2);
+        JLabel numberLabel = new JLabel(String.format("%02d", number), SwingConstants.CENTER);
+        numberLabel.setOpaque(true);
+        numberLabel.setBackground(UiTheme.ACCENT);
+        numberLabel.setForeground(Color.WHITE);
+        numberLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        numberLabel.setPreferredSize(new Dimension(42, 42));
+
+        JLabel title = new JLabel(lines[0]);
+        title.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        title.setForeground(UiTheme.TEXT);
+        JPanel cardHeading = new JPanel(new BorderLayout(12, 0));
+        cardHeading.setOpaque(false);
+        cardHeading.add(numberLabel, BorderLayout.WEST);
+        cardHeading.add(title, BorderLayout.CENTER);
+
+        JTextArea body = new JTextArea(lines.length > 1 ? lines[1] : "");
+        body.setEditable(false);
+        body.setLineWrap(true);
+        body.setWrapStyleWord(true);
+        body.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        body.setForeground(UiTheme.TEXT);
+        body.setBackground(UiTheme.SURFACE);
+        body.setBorder(BorderFactory.createEmptyBorder(18, 4, 4, 4));
+
+        detailPanel.add(cardHeading, BorderLayout.NORTH);
+        detailPanel.add(body, BorderLayout.CENTER);
+        detailPanel.revalidate();
+        detailPanel.repaint();
+    }
+
+    private String topicTitle(String section) {
+        int newline = section.indexOf('\n');
+        return newline < 0 ? section : section.substring(0, newline);
     }
 
     private String getManual(String role) {

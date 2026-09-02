@@ -5,6 +5,7 @@ import com.sunrisedental.model.*;
 import com.sunrisedental.util.NumberGenerator;
 import com.sunrisedental.util.ReferenceDataClient;
 import com.sunrisedental.util.ValidationUtil;
+import com.sunrisedental.view.UiTheme;
 import com.toedter.calendar.JDateChooser;
 
 import javax.swing.*;
@@ -28,27 +29,28 @@ public class AppointmentFormPanel extends JPanel {
     public AppointmentFormPanel() {
         controller = new AppointmentController();
         setLayout(new BorderLayout());
-        setBackground(Color.WHITE);
+        setBackground(UiTheme.CANVAS);
         setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
         // Top Panel with Title and Refresh Button
         JPanel topPanel = new JPanel(new BorderLayout());
-        topPanel.setBackground(Color.WHITE);
+        topPanel.setBackground(UiTheme.CANVAS);
         JLabel title = new JLabel("Register New Appointment", SwingConstants.LEFT);
-        title.setFont(new Font("Arial", Font.BOLD, 22));
-        title.setForeground(new Color(0, 102, 204));
+        UiTheme.styleTitle(title);
         topPanel.add(title, BorderLayout.WEST);
 
         JButton refreshBtn = new JButton("Refresh Dropdowns");
+        UiTheme.styleButton(refreshBtn);
         refreshBtn.addActionListener(e -> refreshDropdowns());
         topPanel.add(refreshBtn, BorderLayout.EAST);
         add(topPanel, BorderLayout.NORTH);
 
         JPanel formPanel = new JPanel(new GridLayout(7, 2, 10, 20));
-        formPanel.setBackground(Color.WHITE);
+        formPanel.setBackground(UiTheme.CANVAS);
         formPanel.setBorder(BorderFactory.createEmptyBorder(20, 0, 20, 0));
 
         patientCombo = new JComboBox<>();
+        UiTheme.styleField(patientCombo);
         patientCombo.setRenderer(new DefaultListCellRenderer() {
             @Override
             public Component getListCellRendererComponent(JList<?> list, Object value, int index,
@@ -59,17 +61,21 @@ public class AppointmentFormPanel extends JPanel {
             }
         });
         dentistCombo = new JComboBox<>();
+        UiTheme.styleField(dentistCombo);
         treatmentCombo = new JComboBox<>();
+        UiTheme.styleField(treatmentCombo);
         durationLabel = new JLabel("Select a treatment");
         refreshDropdowns(); // Load data
         
         dateField = new JDateChooser();
+        UiTheme.styleField(dateField);
         dateField.setDate(Date.valueOf(LocalDate.now().plusDays(1)));
         dateField.setDateFormatString("yyyy-MM-dd");
 
         String[] times = {"08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
             "12:00", "12:30", "13:00", "13:30", "14:00", "14:30", "15:00", "15:30", "16:00", "16:30"};
         timeCombo = new JComboBox<>();
+        UiTheme.styleField(timeCombo);
         timeCombo.addItem("Select a time");
         for (String time : times) timeCombo.addItem(time);
         timeCombo.addActionListener(e -> updateDurationLabel());
@@ -77,12 +83,13 @@ public class AppointmentFormPanel extends JPanel {
         updateDurationLabel();
 
         notesArea = new JTextArea(3, 20);
-        notesArea.setBorder(BorderFactory.createLineBorder(Color.GRAY));
+        UiTheme.styleField(notesArea);
 
         JPanel patientSelectionPanel = new JPanel(new BorderLayout(8, 0));
-        patientSelectionPanel.setBackground(Color.WHITE);
+        patientSelectionPanel.setBackground(UiTheme.CANVAS);
         patientSelectionPanel.add(patientCombo, BorderLayout.CENTER);
         JButton viewPatientBtn = new JButton("View Details");
+        UiTheme.styleButton(viewPatientBtn);
         viewPatientBtn.addActionListener(e -> showSelectedPatientDetails());
         patientSelectionPanel.add(viewPatientBtn, BorderLayout.EAST);
 
@@ -97,13 +104,11 @@ public class AppointmentFormPanel extends JPanel {
         add(formPanel, BorderLayout.CENTER);
 
         JButton saveBtn = new JButton("Book Appointment");
-        saveBtn.setBackground(new Color(0, 153, 51));
-        saveBtn.setForeground(Color.WHITE);
-        saveBtn.setFont(new Font("Arial", Font.BOLD, 14));
+        UiTheme.stylePrimaryButton(saveBtn);
         saveBtn.addActionListener(e -> saveAppointment());
         
         JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        bottomPanel.setBackground(Color.WHITE);
+        bottomPanel.setBackground(UiTheme.CANVAS);
         bottomPanel.add(saveBtn);
         add(bottomPanel, BorderLayout.SOUTH);
     }

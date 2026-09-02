@@ -9,6 +9,7 @@ import java.awt.*;
 import java.time.LocalDate;
 import java.util.List;
 import java.sql.Date;
+import com.sunrisedental.view.UiTheme;
 
 public class RevenueReportPanel extends JPanel {
     private ReportController controller = new ReportController();
@@ -18,19 +19,22 @@ public class RevenueReportPanel extends JPanel {
 
     public RevenueReportPanel() {
         setLayout(new BorderLayout(10, 10));
-        setBackground(Color.WHITE);
+        setBackground(UiTheme.CANVAS);
         setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
         // Top Panel
         JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        topPanel.setBackground(Color.WHITE);
+        topPanel.setBackground(UiTheme.CANVAS);
         startField = new JDateChooser();
+        UiTheme.styleField(startField);
         startField.setDate(Date.valueOf(LocalDate.now().withDayOfMonth(1)));
         startField.setDateFormatString("yyyy-MM-dd");
         endField = new JDateChooser();
+        UiTheme.styleField(endField);
         endField.setDate(Date.valueOf(LocalDate.now()));
         endField.setDateFormatString("yyyy-MM-dd");
         JButton generateBtn = new JButton("Generate Revenue");
+        UiTheme.stylePrimaryButton(generateBtn);
 
         topPanel.add(new JLabel("Start Date:")); topPanel.add(startField);
         topPanel.add(new JLabel(" End Date:")); topPanel.add(endField);
@@ -40,14 +44,16 @@ public class RevenueReportPanel extends JPanel {
         // Table
         String[] cols = {"Receipt No", "Patient", "Treatment", "Type", "Total (Rs)"};
         tableModel = new DefaultTableModel(cols, 0);
-        add(new JScrollPane(new JTable(tableModel)), BorderLayout.CENTER);
+        JTable table = new JTable(tableModel);
+        UiTheme.styleTable(table);
+        add(new JScrollPane(table), BorderLayout.CENTER);
 
         // Bottom Summary
         JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        bottomPanel.setBackground(Color.WHITE);
+        bottomPanel.setBackground(UiTheme.CANVAS);
         totalRevenueLbl = new JLabel("Total Revenue: Rs. 0.00");
-        totalRevenueLbl.setFont(new Font("Arial", Font.BOLD, 18));
-        totalRevenueLbl.setForeground(new Color(0, 153, 51));
+        totalRevenueLbl.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        totalRevenueLbl.setForeground(UiTheme.SUCCESS);
         bottomPanel.add(totalRevenueLbl);
         add(bottomPanel, BorderLayout.SOUTH);
 

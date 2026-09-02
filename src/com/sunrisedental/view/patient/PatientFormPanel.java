@@ -3,6 +3,7 @@ package com.sunrisedental.view.patient;
 import com.sunrisedental.controller.PatientController;
 import com.sunrisedental.model.Patient;
 import com.sunrisedental.util.ValidationUtil;
+import com.sunrisedental.view.UiTheme;
 import com.toedter.calendar.JDateChooser;
 
 import javax.swing.*;
@@ -19,25 +20,27 @@ public class PatientFormPanel extends JPanel {
     public PatientFormPanel() {
         controller = new PatientController();
         setLayout(new BorderLayout());
-        setBackground(Color.WHITE);
+        setBackground(UiTheme.CANVAS);
         setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
         JLabel title = new JLabel("Register New Patient", SwingConstants.LEFT);
-        title.setFont(new Font("Arial", Font.BOLD, 22));
-        title.setForeground(new Color(0, 102, 204));
+        UiTheme.styleTitle(title);
         add(title, BorderLayout.NORTH);
 
         JPanel formPanel = new JPanel(new GridLayout(4, 2, 10, 20));
-        formPanel.setBackground(Color.WHITE);
+        formPanel.setBackground(UiTheme.CANVAS);
         formPanel.setBorder(BorderFactory.createEmptyBorder(20, 0, 20, 0));
 
         nameField = new JTextField();
+        UiTheme.styleField(nameField);
         contactField = new JTextField();
+        UiTheme.styleField(contactField);
         dobField = new JDateChooser();
+        UiTheme.styleField(dobField);
         dobField.setDate(Date.valueOf("2000-01-01"));
         dobField.setDateFormatString("yyyy-MM-dd");
         addressArea = new JTextArea(3, 20);
-        addressArea.setBorder(BorderFactory.createLineBorder(Color.GRAY));
+        UiTheme.styleField(addressArea);
 
         formPanel.add(new JLabel("Full Name:")); formPanel.add(nameField);
         formPanel.add(new JLabel("Contact Number (10 digits):")); formPanel.add(contactField);
@@ -47,14 +50,12 @@ public class PatientFormPanel extends JPanel {
         add(formPanel, BorderLayout.CENTER);
 
         JButton saveBtn = new JButton("Register Patient");
-        saveBtn.setBackground(new Color(0, 153, 51));
-        saveBtn.setForeground(Color.WHITE);
-        saveBtn.setFont(new Font("Arial", Font.BOLD, 14));
+        UiTheme.stylePrimaryButton(saveBtn);
         
         saveBtn.addActionListener(e -> savePatient());
         
         JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        bottomPanel.setBackground(Color.WHITE);
+        bottomPanel.setBackground(UiTheme.CANVAS);
         bottomPanel.add(saveBtn);
         add(bottomPanel, BorderLayout.SOUTH);
     }

@@ -7,6 +7,7 @@ import com.sunrisedental.model.Bill;
 
 import javax.swing.*;
 import java.awt.*;
+import com.sunrisedental.view.UiTheme;
 
 public class BillFormPanel extends JPanel {
     private AppointmentController apptController;
@@ -23,23 +24,25 @@ public class BillFormPanel extends JPanel {
         apptController = new AppointmentController();
         billController = new BillController();
         setLayout(new BorderLayout());
-        setBackground(Color.WHITE);
+        setBackground(UiTheme.CANVAS);
         setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
         // 1. Top Panel (Search)
         JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        topPanel.setBackground(Color.WHITE);
+        topPanel.setBackground(UiTheme.CANVAS);
         topPanel.add(new JLabel("Search Appointment No (e.g., APT-2026...): "));
         searchField = new JTextField(15);
+        UiTheme.styleField(searchField);
         JButton searchBtn = new JButton("Search");
+        UiTheme.styleButton(searchBtn);
         topPanel.add(searchField);
         topPanel.add(searchBtn);
         add(topPanel, BorderLayout.NORTH);
 
         // 2. Middle Panel (Details & Calculation)
         JPanel middlePanel = new JPanel(new GridLayout(9, 2, 10, 10));
-        middlePanel.setBackground(Color.WHITE);
-        middlePanel.setBorder(BorderFactory.createTitledBorder("Billing Details"));
+        middlePanel.setBackground(UiTheme.SURFACE);
+        middlePanel.setBorder(UiTheme.surfaceBorder());
 
         pNameLbl = new JLabel("-");
         dentistLbl = new JLabel("-");
@@ -48,8 +51,8 @@ public class BillFormPanel extends JPanel {
         durationLbl = new JLabel("-");
         baseFeeLbl = new JLabel("-");
         totalLbl = new JLabel("-");
-        totalLbl.setFont(new Font("Arial", Font.BOLD, 16));
-        totalLbl.setForeground(Color.RED);
+        totalLbl.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        totalLbl.setForeground(UiTheme.DANGER);
 
         middlePanel.add(new JLabel("Patient Name:")); middlePanel.add(pNameLbl);
         middlePanel.add(new JLabel("Dentist:")); middlePanel.add(dentistLbl);
@@ -66,7 +69,7 @@ public class BillFormPanel extends JPanel {
         group.add(stdRadio); group.add(emgRadio); group.add(childRadio);
         
         JPanel radioPanel = new JPanel();
-        radioPanel.setBackground(Color.WHITE);
+        radioPanel.setBackground(UiTheme.SURFACE);
         radioPanel.add(stdRadio); radioPanel.add(emgRadio); radioPanel.add(childRadio);
 
         middlePanel.add(new JLabel("Select Bill Type:")); middlePanel.add(radioPanel);
@@ -76,15 +79,18 @@ public class BillFormPanel extends JPanel {
 
         // 3. Bottom Panel (Actions)
         JButton calcBtn = new JButton("Calculate Total");
+        UiTheme.styleButton(calcBtn);
         generateBtn = new JButton("Generate Bill");
+        UiTheme.stylePrimaryButton(generateBtn);
         viewBillBtn = new JButton("View Saved Bill");
+        UiTheme.styleButton(viewBillBtn);
         viewBillBtn.setEnabled(false);
         generateBtn.setBackground(new Color(0, 153, 51));
         generateBtn.setForeground(Color.WHITE);
         generateBtn.setEnabled(false); // Disabled until calculated
 
         JPanel bottomPanel = new JPanel();
-        bottomPanel.setBackground(Color.WHITE);
+        bottomPanel.setBackground(UiTheme.CANVAS);
         bottomPanel.add(calcBtn);
         bottomPanel.add(generateBtn);
         bottomPanel.add(viewBillBtn);

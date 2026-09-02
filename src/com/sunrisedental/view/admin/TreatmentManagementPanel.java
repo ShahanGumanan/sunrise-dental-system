@@ -5,27 +5,33 @@ import com.sunrisedental.util.AdminApiClient;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import com.sunrisedental.view.UiTheme;
 
 public class TreatmentManagementPanel extends JPanel {
     private DefaultTableModel tableModel;
 
     public TreatmentManagementPanel() {
         setLayout(new BorderLayout(10, 10));
-        setBackground(Color.WHITE);
+        setBackground(UiTheme.CANVAS);
         setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
         JPanel topPanel = new JPanel(new BorderLayout());
-        topPanel.setBackground(Color.WHITE);
-        topPanel.add(new JLabel("Manage Treatments"), BorderLayout.WEST);
+        topPanel.setBackground(UiTheme.CANVAS);
+        JLabel title = new JLabel("Manage Treatments");
+        UiTheme.styleTitle(title);
+        topPanel.add(title, BorderLayout.WEST);
 
         JButton addBtn = new JButton("+ Add Treatment");
+        UiTheme.stylePrimaryButton(addBtn);
         addBtn.addActionListener(e -> addTreatment());
         topPanel.add(addBtn, BorderLayout.EAST);
         add(topPanel, BorderLayout.NORTH);
 
         String[] cols = {"ID", "Treatment Name", "Base Fee (Rs)", "Consultation Fee (Rs)", "Duration (minutes)", "Description"};
         tableModel = new DefaultTableModel(cols, 0);
-        add(new JScrollPane(new JTable(tableModel)), BorderLayout.CENTER);
+        JTable table = new JTable(tableModel);
+        UiTheme.styleTable(table);
+        add(new JScrollPane(table), BorderLayout.CENTER);
 
         loadTreatments();
     }

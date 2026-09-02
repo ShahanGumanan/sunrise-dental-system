@@ -6,6 +6,7 @@ import com.sunrisedental.model.Patient;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import com.sunrisedental.view.UiTheme;
 import java.util.List;
 
 public class PatientListPanel extends JPanel {
@@ -16,19 +17,19 @@ public class PatientListPanel extends JPanel {
     public PatientListPanel() {
         controller = new PatientController();
         setLayout(new BorderLayout(0, 20));
-        setBackground(Color.WHITE);
+        setBackground(UiTheme.CANVAS);
         setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
         // Top Panel with Title and Refresh Button
         JPanel topPanel = new JPanel(new BorderLayout());
-        topPanel.setBackground(Color.WHITE);
+        topPanel.setBackground(UiTheme.CANVAS);
         
         JLabel title = new JLabel("Patient Directory", SwingConstants.LEFT);
-        title.setFont(new Font("Arial", Font.BOLD, 22));
-        title.setForeground(new Color(0, 102, 204));
+        UiTheme.styleTitle(title);
         topPanel.add(title, BorderLayout.WEST);
 
         JButton refreshBtn = new JButton("Refresh List");
+        UiTheme.styleButton(refreshBtn);
         refreshBtn.addActionListener(e -> loadPatientsData());
         topPanel.add(refreshBtn, BorderLayout.EAST);
 
@@ -43,12 +44,12 @@ public class PatientListPanel extends JPanel {
             }
         };
         table = new JTable(tableModel);
-        table.setRowHeight(25);
-        table.getTableHeader().setFont(new Font("Arial", Font.BOLD, 12));
+        UiTheme.styleTable(table);
         table.getColumnModel().getColumn(2).setPreferredWidth(150);
         table.getColumnModel().getColumn(2).setCellRenderer((tableComponent, value, isSelected, hasFocus, row, column) -> {
             JButton button = new JButton(String.valueOf(value));
             button.setFocusPainted(false);
+            UiTheme.styleButton(button);
             return button;
         });
         table.addMouseListener(new java.awt.event.MouseAdapter() {
