@@ -1,55 +1,117 @@
 # Sunrise Dental System
 
-Distributed Java Swing client and HTTP web service for dental appointment, patient, treatment, billing, and staff management.
+Sunrise Dental System is a distributed Java Swing desktop application for managing a dental clinic. It supports authentication, patients, appointments, treatments, billing, staff administration, revenue reporting, and role-specific help.
 
 ## Technology
 
-- Java 17
-- Maven
-- Java Swing
-- MySQL 8 via JDBC
-- JDK HttpServer REST-style web services with Gson JSON
-- JUnit 5 and Mockito
+- Java 26 (configured in `nbproject/project.properties`)
+- NetBeans project with Apache Ant build targets
+- Java Swing desktop UI
+- MySQL 8 with JDBC
+- JDK `HttpServer` REST-style service with Gson JSON
+- JUnit 4 and Mockito tests
 - MVC, DAO, Singleton, Factory, and Strategy patterns
 
-## Setup
+## Project Layout
 
-1. Install Java 17, Maven, and MySQL/XAMPP.
-2. Create the database by running `src/main/resources/schema.sql` in MySQL.
-3. Run `src/main/resources/seed.sql` to create demo data.
-4. Copy `src/main/resources/db.properties` to a private local configuration if credentials differ. Never commit real credentials.
-5. Run `mvn clean test`.
-6. Start the application with `mvn exec:java -Dexec.mainClass=com.sunrisedental.Main`.
+```text
+src/       Application and server source code
+test/      JUnit tests
+src/schema.sql   Database schema
+src/seed.sql     Demo users and treatments
+src/db.properties  Local database connection settings
+nbproject/ NetBeans and Ant project configuration
+```
 
-The seeded demo password is `password` for the `admin`, `receptionist`, and `dentist` accounts. Change demo credentials before using the system with real data.
+Build output is generated under `build/` and packaged artifacts are placed under `dist/`. These directories should not be edited manually.
+
+## Requirements
+
+1. Java 26 or a compatible JDK configured as the NetBeans active platform.
+2. Apache Ant.
+3. MySQL 8 or XAMPP with MySQL enabled.
+4. The JAR dependencies referenced by `nbproject/project.properties`:
+   - Gson 2.10.1
+   - jBCrypt 0.4
+   - JCalendar 1.4
+   - MySQL Connector/J 8.3.0
+   - JUnit 4.13.2, Mockito 4.11.0, Hamcrest, Byte Buddy, and Objenesis for tests
+
+The current project configuration references these libraries from `C:\Users\Shahan\Downloads\lib`. Update the `file.reference.*` values in `nbproject/project.properties` when the libraries are stored elsewhere.
+
+## Database Setup
+
+1. Start MySQL.
+2. Run `src/schema.sql` in MySQL. It creates the `sunrise_dental_db` database and its tables.
+3. Run `src/seed.sql` to add demo accounts and sample treatments.
+4. Check `src/db.properties`:
+
+```properties
+db.url=jdbc:mysql://localhost:3306/sunrise_dental_db
+db.user=root
+db.password=
+db.driver=com.mysql.cj.jdbc.Driver
+```
+
+Do not commit real database credentials.
+
+The seeded demo password is `password` for these accounts:
+
+| Username | Role |
+| --- | --- |
+| `admin` | Administrator |
+| `receptionist` | Receptionist |
+| `dentist` | Dentist |
+
+Change the demo credentials before using the system with real data.
 
 ## Architecture
 
-The system runs as two processes. `DentalServer` owns the database and DAO layer and exposes JSON HTTP endpoints on port 8080. The Swing/JFrame client sends requests through `ApiClient`; its controllers validate requests and act as network proxies. Fee calculation uses the Strategy pattern selected by the Bill Factory.
+The system runs as two processes:
 
-## Running the distributed system
+- `com.sunrisedental.server.DentalServer` owns database access and exposes JSON endpoints on port `8080`.
+- `com.sunrisedental.Main` launches the Swing client.
 
-Start MySQL and create/seed the database, then use two terminals from the project root:
+The client communicates with `http://localhost:8080/api` through `ApiClient`. Controllers coordinate client actions, while DAOs and database operations remain behind the server. Billing uses the Strategy pattern selected by `BillFactory`.
 
-```text
-mvn exec:java "-Dexec.mainClass=com.sunrisedental.server.DentalServer"
-mvn exec:java "-Dexec.mainClass=com.sunrisedental.Main"
-```
+## Running the Application
 
-The server must be running before the client logs in. The server endpoint is `http://localhost:8080/api`.
-
-## Roles
-
-- Admin: full access, staff and treatment administration, revenue reports
-- Receptionist: appointments, patients, billing, and daily reports
-- Dentist: own schedule and appointment information
-
-## Commands
+From the project root, compile the project:
 
 ```text
-mvn clean test
-mvn clean package
-mvn exec:java -Dexec.mainClass=com.sunrisedental.Main
+ant clean
+ant compile
 ```
 
-Database integration tests require a configured MySQL database. Unit tests do not require MySQL to be running.
+Start the server in one terminal:
+
+```text
+ant -Dmain.class=com.sunrisedental.server.DentalServer run
+```
+
+Start the desktop client in a second terminal:
+
+```text
+ant -Dmain.class=com.sunrisedental.Main run
+```
+
+The server must be running before the client attempts to log in.
+
+## User Roles
+
+- **Admin:** dashboard, appointments, patients, billing, staff management, treatment management, revenue reports, and system help.
+- **Receptionist:** dashboard, patient registration and directory, appointment booking and directory, billing, and system help.
+- **Dentist:** dashboard, personal schedule, appointment decisions, appointment information, and system help.
+
+The Swing interface uses a shared visual theme across forms, tables, dashboards, reports, and role-specific help. The Help screen presents each role's manual as selectable topics and guided instruction cards.
+
+## Verification Commands
+
+```text
+ant clean
+ant compile
+ant test
+ant jar
+```
+
+Run `ant test` after configuring the required dependencies. Tests that access MySQL require a running and seeded database; isolated controller tests may run without MySQL depending on their mocked collaborators.
