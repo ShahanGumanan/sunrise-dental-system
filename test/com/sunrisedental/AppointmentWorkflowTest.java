@@ -6,35 +6,30 @@ import com.sunrisedental.model.Appointment;
 import com.sunrisedental.model.Dentist;
 import com.sunrisedental.model.Patient;
 import com.sunrisedental.model.Treatment;
-import org.junit.jupiter.api.Test;
-
+import org.junit.Test;
 import java.time.LocalDate;
 import java.time.LocalTime;
-
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
-class AppointmentWorkflowTest {
+public class AppointmentWorkflowTest {
     @Test
-    void delegatesConflictCheckWithTreatmentDuration() {
+    public void delegatesConflictCheckWithTreatmentDuration() {
         AppointmentDAO dao = mock(AppointmentDAO.class);
         Appointment appointment = validAppointment();
         appointment.getTreatment().setDurationMinutes(60);
         when(dao.existsActiveAppointment(4, appointment.getAppointmentDate(), appointment.getAppointmentTime(), 60, 0))
                 .thenReturn(true);
-
         assertTrue(new AppointmentController(dao).hasAppointmentConflict(appointment));
         verify(dao).existsActiveAppointment(4, appointment.getAppointmentDate(), appointment.getAppointmentTime(), 60, 0);
     }
 
     @Test
-    void delegatesDentistConfirmationAndCancellation() {
+    public void delegatesDentistConfirmationAndCancellation() {
         AppointmentDAO dao = mock(AppointmentDAO.class);
         when(dao.updateStatusForDentist(12, "confirmed", 7)).thenReturn(true);
         when(dao.updateStatusForDentist(12, "cancelled", 7)).thenReturn(true);
         AppointmentController controller = new AppointmentController(dao);
-
         assertTrue(controller.confirmAppointment(12, 7));
         assertTrue(controller.cancelAppointmentByDentist(12, 7));
         verify(dao).updateStatusForDentist(12, "confirmed", 7);
@@ -42,21 +37,18 @@ class AppointmentWorkflowTest {
     }
 
     @Test
-    void doesNotReportConflictForIncompleteAppointment() {
+    public void doesNotReportConflictForIncompleteAppointment() {
         AppointmentDAO dao = mock(AppointmentDAO.class);
-
         boolean result = new AppointmentController(dao).hasAppointmentConflict(new Appointment());
-
         assertFalse(result);
         verifyNoInteractions(dao);
     }
 
     @Test
-    void rejectsInvalidUpdateBeforeCallingDao() {
+    public void rejectsInvalidUpdateBeforeCallingDao() {
         AppointmentDAO dao = mock(AppointmentDAO.class);
         Appointment invalid = validAppointment();
         invalid.setAppointmentDate(LocalDate.now().minusDays(1));
-
         assertFalse(new AppointmentController(dao).updateAppointment(invalid));
         verifyNoInteractions(dao);
     }

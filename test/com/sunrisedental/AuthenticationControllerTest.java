@@ -4,55 +4,49 @@ import com.sunrisedental.controller.AuthController;
 import com.sunrisedental.dao.UserDAO;
 import com.sunrisedental.model.User;
 import com.sunrisedental.util.SessionManager;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.After;
+import org.junit.Test;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
-class AuthenticationControllerTest {
-    @AfterEach
-    void clearSession() {
+public class AuthenticationControllerTest {
+    @After
+    public void clearSession() {
         SessionManager.logout();
     }
 
     @Test
-    void allowsActiveUserWithCorrectPassword() {
+    public void allowsActiveUserWithCorrectPassword() {
         User user = user("admin", true);
         UserDAO dao = mock(UserDAO.class);
         when(dao.findByUsername("admin")).thenReturn(user);
-
         assertTrue(new AuthController(dao).login("admin", "password"));
         assertTrue(SessionManager.getCurrentUser() == user);
     }
 
     @Test
-    void rejectsInactiveUserBeforeCheckingPassword() {
+    public void rejectsInactiveUserBeforeCheckingPassword() {
         User user = user("receptionist", false);
         UserDAO dao = mock(UserDAO.class);
         when(dao.findByUsername("receptionist")).thenReturn(user);
-
         assertFalse(new AuthController(dao).login("receptionist", "password"));
         verify(dao).findByUsername("receptionist");
         assertTrue(SessionManager.getCurrentUser() == null);
     }
 
     @Test
-    void rejectsWrongPassword() {
+    public void rejectsWrongPassword() {
         UserDAO dao = mock(UserDAO.class);
         when(dao.findByUsername("admin")).thenReturn(user("admin", true));
-
         assertFalse(new AuthController(dao).login("admin", "wrong-password"));
         assertTrue(SessionManager.getCurrentUser() == null);
     }
 
     @Test
-    void rejectsUnknownUserAndBlankCredentials() {
+    public void rejectsUnknownUserAndBlankCredentials() {
         UserDAO dao = mock(UserDAO.class);
         when(dao.findByUsername(anyString())).thenReturn(null);
         AuthController controller = new AuthController(dao);
-
         assertFalse(controller.login("unknown", "password"));
         assertFalse(controller.login("", ""));
         verify(dao).findByUsername("unknown");

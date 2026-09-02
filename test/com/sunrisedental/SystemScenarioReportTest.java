@@ -12,18 +12,16 @@ import com.sunrisedental.model.Patient;
 import com.sunrisedental.model.Treatment;
 import com.sunrisedental.model.User;
 import com.sunrisedental.util.SessionManager;
-import org.junit.jupiter.api.Test;
-
+import org.junit.Test;
 import java.time.LocalDate;
 import java.time.LocalTime;
-
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-class SystemScenarioReportTest {
+public class SystemScenarioReportTest {
     @Test
-    void printsCoreSystemScenarioReport() {
+    public void printsCoreSystemScenarioReport() {
         System.out.println();
         System.out.println("========== SUNRISE DENTAL AUTOMATION REPORT ==========");
         report("Active user with correct password", true, login(true, "password"));
@@ -37,17 +35,15 @@ class SystemScenarioReportTest {
         report("Treatment duration is stored", 45, treatmentDuration());
         System.out.println("=======================================================");
 
-        assertAll(
-                () -> assertTrue(login(true, "password")),
-                () -> assertFalse(login(false, "password")),
-                () -> assertFalse(login(true, "wrong")),
-                () -> assertTrue(book(true, false)),
-                () -> assertFalse(book(false, false)),
-                () -> assertFalse(book(true, true)),
-                () -> assertTrue(billingRejected("pending")),
-                () -> assertEquals(1500.0, confirmedBillTotal(), 0.01),
-                () -> assertEquals(45, treatmentDuration())
-        );
+        assertTrue(login(true, "password"));
+        assertFalse(login(false, "password"));
+        assertFalse(login(true, "wrong"));
+        assertTrue(book(true, false));
+        assertFalse(book(false, false));
+        assertFalse(book(true, true));
+        assertTrue(billingRejected("pending"));
+        assertEquals(1500.0, confirmedBillTotal(), 0.01);
+        assertEquals(45, treatmentDuration());
     }
 
     private void report(String scenario, Object expected, Object actual) {
