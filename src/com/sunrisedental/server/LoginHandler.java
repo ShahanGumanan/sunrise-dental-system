@@ -23,10 +23,14 @@ public final class LoginHandler implements HttpHandler {
             String username = request.has("username") ? request.get("username").getAsString().trim() : "";
             String password = request.has("password") ? request.get("password").getAsString() : "";
             User user = userDAO.findByUsername(username);
-            boolean valid = user != null && user.isActive()
-                    && !password.isBlank() && PasswordUtil.verify(password, user.getPasswordHash());
-            if (valid) ApiResponses.json(exchange, 200, user);
-            else ApiResponses.json(exchange, 401, java.util.Map.of("error", "Invalid credentials"));
+            if (user != null && !user.isActive()) {
+                ApiResponses.json(exchange, 403, java.util.Map.of("error", "Account deactivated"));
+            } else if (user != null && !password.isBlank()
+                    && PasswordUtil.verify(password, user.getPasswordHash())) {
+                ApiResponses.json(exchange, 200, user);
+            } else {
+                ApiResponses.json(exchange, 401, java.util.Map.of("error", "Invalid credentials"));
+            }
         } catch (Exception error) {
             try { ApiResponses.serverError(exchange, error); } catch (Exception ignored) { }
         }

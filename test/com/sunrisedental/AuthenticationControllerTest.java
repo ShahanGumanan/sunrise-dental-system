@@ -35,6 +35,15 @@ public class AuthenticationControllerTest {
     }
 
     @Test
+    public void reportsWhenAccountIsDeactivated() {
+        UserDAO dao = mock(UserDAO.class);
+        when(dao.findByUsername("receptionist")).thenReturn(user("receptionist", false));
+
+        assertEquals(AuthController.LoginResult.ACCOUNT_DEACTIVATED,
+                new AuthController(dao).authenticate("receptionist", "password"));
+    }
+
+    @Test
     public void rejectsWrongPassword() {
         UserDAO dao = mock(UserDAO.class);
         when(dao.findByUsername("admin")).thenReturn(user("admin", true));

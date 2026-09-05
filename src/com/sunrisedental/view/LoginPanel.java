@@ -149,10 +149,13 @@ public class LoginPanel extends JPanel {
             String username = usernameField.getText();
             String password = new String(passwordField.getPassword());
 
-            if (authController.login(username, password)) {
+            AuthController.LoginResult result = authController.authenticate(username, password);
+            if (result == AuthController.LoginResult.SUCCESS) {
                 mainFrame.loadApplication();
             } else {
-                statusLabel.setText("Invalid username or password.");
+                statusLabel.setText(result == AuthController.LoginResult.ACCOUNT_DEACTIVATED
+                        ? "Account deactivated."
+                        : "Invalid username or password.");
                 shake(card);
             }
         };
