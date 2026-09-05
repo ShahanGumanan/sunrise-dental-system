@@ -4,7 +4,7 @@ Sunrise Dental System is a distributed Java Swing desktop application for managi
 
 ## Technology
 
-- Java 26 (configured in `nbproject/project.properties`)
+- Java 17 (configured in `nbproject/project.properties`)
 - NetBeans project with Apache Ant build targets
 - Java Swing desktop UI
 - MySQL 8 with JDBC
@@ -27,7 +27,7 @@ Build output is generated under `build/` and packaged artifacts are placed under
 
 ## Requirements
 
-1. Java 26 or a compatible JDK configured as the NetBeans active platform.
+1. Java 17 or a compatible JDK configured as the NetBeans active platform.
 2. Apache Ant.
 3. MySQL 8 or XAMPP with MySQL enabled.
 4. The JAR dependencies referenced by `nbproject/project.properties`:
@@ -37,7 +37,7 @@ Build output is generated under `build/` and packaged artifacts are placed under
    - MySQL Connector/J 8.3.0
    - JUnit 4.13.2, Mockito 4.11.0, Hamcrest, Byte Buddy, and Objenesis for tests
 
-The current project configuration references these libraries from `C:\Users\Shahan\Downloads\lib`. Update the `file.reference.*` values in `nbproject/project.properties` when the libraries are stored elsewhere.
+The current project configuration references these libraries from `lib/` in the repository root. Download the listed JARs into that directory before running Ant locally.
 
 ## Database Setup
 
